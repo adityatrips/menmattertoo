@@ -101,6 +101,7 @@ class EditProfileState extends State<EditProfile> {
                   TextFieldInput(
                     controller: nameController,
                     hintText: 'Name',
+                    autoCapitalize: TextCapitalization.words,
                   ),
                   const SizedBox(height: 20),
                   TextFieldInput(
@@ -113,6 +114,7 @@ class EditProfileState extends State<EditProfile> {
                     hintText: 'Bio',
                     maxLength: 250,
                     multiline: true,
+                    autoCapitalize: TextCapitalization.sentences,
                   ),
                   const SizedBox(height: 20),
                   CustomButton(

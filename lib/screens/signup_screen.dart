@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/login_screen.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -79,6 +79,7 @@ class LoignScreenState extends State<SignupScreen> {
                   TextFieldInput(
                     controller: nameController,
                     hintText: "Enter your name",
+                    autoCapitalize: TextCapitalization.words,
                   ),
                   const SizedBox(height: 10),
                   TextFieldInput(

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class TextFieldInput extends StatefulWidget {
   final bool? autocorrect;
   final TextInputType? textInputType;
-  final TextCapitalization? autoCapitalize;
+  final TextCapitalization autoCapitalize;
   final String hintText;
   final bool isPassword;
   final TextEditingController controller;
@@ -15,7 +15,7 @@ class TextFieldInput extends StatefulWidget {
     required this.controller,
     required this.hintText,
     this.isPassword = false,
-    this.autoCapitalize,
+    this.autoCapitalize = TextCapitalization.none,
     this.autocorrect,
     this.textInputType,
     this.multiline = false,
@@ -36,7 +36,7 @@ class TextFieldInputState extends State<TextFieldInput> {
       controller: widget.controller,
       autocorrect: widget.autocorrect ?? false,
       keyboardType: widget.textInputType ?? TextInputType.text,
-      textCapitalization: widget.autoCapitalize ?? TextCapitalization.sentences,
+      textCapitalization: widget.autoCapitalize,
       obscureText: widget.isPassword,
       decoration: InputDecoration(
         hintText: widget.hintText,
