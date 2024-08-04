@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
+import 'package:men_matter_too/screens/search_page.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -15,8 +15,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _auth = FirebaseAuth.instance;
-  int currentIndex = 3;
+  int currentIndex = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Center(
                 child: Text("Hello"),
               ),
-              Center(
-                child: Text("Search"),
-              ),
+              SearchPage(),
               Center(
                 child: Text("Notifications"),
               ),

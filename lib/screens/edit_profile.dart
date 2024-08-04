@@ -14,10 +14,10 @@ class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
 
   @override
-  _EditProfileState createState() => _EditProfileState();
+  EditProfileState createState() => EditProfileState();
 }
 
-class _EditProfileState extends State<EditProfile> {
+class EditProfileState extends State<EditProfile> {
   final bioController = TextEditingController();
   final nameController = TextEditingController();
   final usernameController = TextEditingController();

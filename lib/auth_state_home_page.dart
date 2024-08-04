@@ -6,10 +6,10 @@ class AuthStateHomePage extends StatefulWidget {
   const AuthStateHomePage({super.key});
 
   @override
-  _AuthStateHomePageState createState() => _AuthStateHomePageState();
+  AuthStateHomePageState createState() => AuthStateHomePageState();
 }
 
-class _AuthStateHomePageState extends State<AuthStateHomePage> {
+class AuthStateHomePageState extends State<AuthStateHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

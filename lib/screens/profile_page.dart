@@ -1,7 +1,10 @@
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
@@ -9,18 +12,18 @@ import 'package:men_matter_too/screens/edit_profile.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final MyUser? user;
+
+  const ProfilePage({
+    super.key,
+    this.user,
+  });
 
   @override
   ProfilePageState createState() => ProfilePageState();
 }
 
 class ProfilePageState extends State<ProfilePage> {
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   CroppedFile? file;
 
   void setFile(CroppedFile file) {
@@ -31,92 +34,196 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-        ),
-        child: StreamBuilder(
-          stream: AuthMethods().getUserDetails(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(snapshot.error.toString()),
-              );
-            }
-            if (!snapshot.hasData) {
-              return const Center(
-                child: Text("No data found"),
-              );
-            }
+    bool isUser = widget.user == null;
 
-            return ListView(
-              children: [
-                const SizedBox(height: 20),
-                _buildUserHeader(
-                  context,
-                  MyUser.fromJson(snapshot.data!.data()!),
-                ),
-                const SizedBox(height: 10),
-                _userInformation(
-                  context,
-                  MyUser.fromJson(snapshot.data!.data()!),
-                ),
-                const SizedBox(height: 10),
-                _userProfileInteraction(
-                  context,
-                  MyUser.fromJson(snapshot.data!.data()!),
-                ),
-                const SizedBox(height: 10),
-                _userPosts(
-                  context,
-                  MyUser.fromJson(snapshot.data!.data()!),
-                ),
+    return Scaffold(
+      appBar: isUser
+          ? null
+          : AppBar(
+              actions: [
+                SvgPicture.asset(
+                  "assets/logo_extended.svg",
+                  width: 150,
+                  color: Theme.of(context).colorScheme.primary,
+                )
               ],
-            );
-          },
-        ),
-      ),
+              title: Text(
+                "@${widget.user!.username}",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+      body: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+          ),
+          child: isUser
+              ? StreamBuilder(
+                  stream: AuthMethods().getUserDetails(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(snapshot.error.toString()),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(
+                        child: Text("No data found"),
+                      );
+                    }
+
+                    return ListView(
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildUserHeader(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                        const SizedBox(height: 10),
+                        _userInformation(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                        const SizedBox(height: 10),
+                        _userProfileInteraction(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                          isUser: isUser,
+                        ),
+                        const SizedBox(height: 10),
+                        _userPosts(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                      ],
+                    );
+                  },
+                )
+              : StreamBuilder(
+                  stream: FirebaseFirestore.instance
+                      .collection("users")
+                      .doc(widget.user!.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(snapshot.error.toString()),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(
+                        child: Text("No data found"),
+                      );
+                    }
+
+                    return ListView(
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildUserHeader(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                        const SizedBox(height: 10),
+                        _userInformation(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                        const SizedBox(height: 10),
+                        _userProfileInteraction(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                          isUser: isUser,
+                        ),
+                        const SizedBox(height: 10),
+                        _userPosts(
+                          context,
+                          MyUser.fromJson(snapshot.data!.data()!),
+                        ),
+                      ],
+                    );
+                  },
+                )),
     );
   }
 
   // * User profile interaction starts here
-  Widget _userProfileInteraction(BuildContext context, MyUser) {
+  Widget _userProfileInteraction(
+    BuildContext context,
+    MyUser user, {
+    bool isUser = false,
+  }) {
     return Row(
       children: [
-        Expanded(
-          child: CustomButton(
-            fontSize: 16,
-            fontFamily: "DM",
-            buttonText: "Edit Profile",
-            height: 35,
-            borderRadius: 5,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return const EditProfile();
+        if (isUser)
+          Expanded(
+            child: CustomButton(
+              fontFamily: "DM",
+              buttonText: "Edit Profile",
+              height: 35,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return const EditProfile();
+                    },
+                  ),
+                );
+              },
+            ),
+          )
+        else
+          StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection("users")
+                .doc(user.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              }
+              if (snapshot.hasError) {
+                return Text(snapshot.error.toString());
+              }
+              if (!snapshot.hasData) {
+                return const Text("No data found");
+              }
+
+              MyUser user = MyUser.fromJson(snapshot.data!.data()!);
+
+              return Expanded(
+                child: CustomButton(
+                  onTap: () {
+                    AuthMethods().followAndUnfollowUser(
+                      selfUid: FirebaseAuth.instance.currentUser!.uid,
+                      otherUid: user.uid,
+                    );
                   },
+                  buttonText: user.followers
+                          .contains(FirebaseAuth.instance.currentUser!.uid)
+                      ? "Unfollow"
+                      : "Follow",
                 ),
               );
             },
           ),
-        ),
         const SizedBox(width: 10),
         Expanded(
           child: CustomButton(
-            fontSize: 16,
             fontFamily: "DM",
             buttonText: "Share Profile",
             height: 35,
-            borderRadius: 5,
-            backgroundColor: Theme.of(context).colorScheme.tertiary,
             onTap: () {},
           ),
         ),

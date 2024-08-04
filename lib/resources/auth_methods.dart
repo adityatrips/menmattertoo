@@ -85,6 +85,97 @@ class AuthMethods {
     return res;
   }
 
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      getAllUsers() async {
+    final users = await _firestore.collection("users").get();
+
+    return users.docs;
+  }
+
+  Future<List<MyUser?>> searchUser(String searchQuery) async {
+    final users = await _firestore
+        .collection("users")
+        .where(Filter.and(
+            Filter(
+              'username',
+              isGreaterThanOrEqualTo: searchQuery,
+            ),
+            Filter(
+              'username',
+              isLessThanOrEqualTo: '$searchQuery\uf8ff',
+            ),
+            Filter(
+              'uid',
+              isNotEqualTo: _auth.currentUser!.uid,
+            )))
+        .get();
+
+    return users.docs.map((e) {
+      return MyUser.fromJson(e.data());
+    }).toList();
+  }
+
+  Future<bool> isFollowing({
+    required String selfUid,
+    required String otherUid,
+  }) async {
+    final selfRef = _firestore.collection("users").doc(selfUid);
+    final selfDoc = await selfRef.get();
+    final selfData = selfDoc.data() as Map<String, dynamic>;
+
+    List<dynamic> selfFollowing = selfData['following'];
+
+    if (selfFollowing.contains(otherUid)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<void> followAndUnfollowUser({
+    required String selfUid,
+    required String otherUid,
+  }) async {
+    if (selfUid == otherUid) {
+      log("You cannot follow yourself");
+      return Future.error("You cannot follow yourself");
+    }
+
+    log("Your uid  : $selfUid");
+    log("Otehr uid : $otherUid");
+
+    final selfRef = _firestore.collection("users").doc(selfUid);
+    final otherRef = _firestore.collection("users").doc(otherUid);
+
+    final selfDoc = await selfRef.get();
+    final otherDoc = await otherRef.get();
+
+    final selfData = selfDoc.data() as Map<String, dynamic>;
+    final otherData = otherDoc.data() as Map<String, dynamic>;
+
+    List<dynamic> selfFollowing = selfData['following'];
+    List<dynamic> otherFollowers = otherData['followers'];
+
+    if (selfFollowing.contains(otherUid)) {
+      selfFollowing.remove(otherUid);
+      otherFollowers.remove(selfUid);
+    } else {
+      selfFollowing.add(otherUid);
+      otherFollowers.add(selfUid);
+    }
+
+    await selfRef.update({
+      'following': selfFollowing,
+    });
+
+    await otherRef.update({
+      'followers': otherFollowers,
+    });
+
+    log("Following: $selfFollowing");
+    log("Followers: $otherFollowers");
+  }
+
   Stream<DocumentSnapshot<Map<String, dynamic>>> getUserDetails() {
     User currentUser = _auth.currentUser!;
 
