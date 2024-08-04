@@ -39,7 +39,6 @@ class TextFieldInputState extends State<TextFieldInput> {
       textCapitalization: widget.autoCapitalize ?? TextCapitalization.sentences,
       obscureText: widget.isPassword,
       decoration: InputDecoration(
-        label: Text(widget.hintText),
         hintText: widget.hintText,
         border: OutlineInputBorder(
           borderSide: BorderSide.none,
