@@ -1,0 +1,84 @@
+plugins {
+    id "com.android.application"
+    id 'com.google.gms.google-services'
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def keyProperties = new Properties()
+def keyPropertiesFile = rootProject.file("key.properties")
+if (keyPropertiesFile.exists()) {
+    keyPropertiesFile.withReader("UTF-8") { reader ->
+        keyProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0"
+}
+
+def flutterMinSdkVersion = localProperties.getProperty("flutter.minSdkVersion")
+if (flutterMinSdkVersion == null) {
+    flutterMinSdkVersion = 23
+}
+
+def flutterCompileSdkVersion = localProperties.getProperty("flutter.compileSdkVersion")
+if (flutterCompileSdkVersion == null) {
+    flutterCompileSdkVersion = 34
+}
+
+android {
+    namespace = "com.adityatripathi.men_matter_too"
+    compileSdk = flutterCompileSdkVersion.toInteger()
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    defaultConfig {
+        applicationId = "com.adityatripathi.men_matter_too"
+        minSdkVersion = flutterMinSdkVersion.toInteger()
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keyProperties['KS_ALIAS']
+            keyPassword keyProperties['KS_PASSW']
+            storeFile file(keyProperties['KS_STORE'])
+            storePassword keyProperties['KS_PASSW']
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.release
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
