@@ -35,21 +35,13 @@ class _MyImagePickerState extends State<MyImagePicker> {
       });
       await _getCropped();
     } catch (e) {
+      Navigator.pop(widget.buildContext);
       log("message: Can't crop because image is not selected");
       showSnackbar(
         widget.buildContext,
         "Can't crop because image is not selected",
         type: TypeOfSnackbar.error,
       );
-    } finally {
-      log("popping");
-      Navigator.pop(widget.buildContext);
-      // Navigator.push(
-      //   widget.buildContext,
-      //   MaterialPageRoute(
-      //     builder: (context) => const EditProfile(),
-      //   ),
-      // );
     }
   }
 
