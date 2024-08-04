@@ -7,6 +7,8 @@ class TextFieldInput extends StatefulWidget {
   final String hintText;
   final bool isPassword;
   final TextEditingController controller;
+  final bool multiline;
+  final int? maxLength;
 
   const TextFieldInput({
     super.key,
@@ -16,6 +18,8 @@ class TextFieldInput extends StatefulWidget {
     this.autoCapitalize,
     this.autocorrect,
     this.textInputType,
+    this.multiline = false,
+    this.maxLength,
   });
 
   @override
@@ -26,12 +30,16 @@ class TextFieldInputState extends State<TextFieldInput> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      minLines: null,
+      maxLines: widget.multiline ? 5 : 1,
+      maxLength: widget.maxLength,
       controller: widget.controller,
       autocorrect: widget.autocorrect ?? false,
       keyboardType: widget.textInputType ?? TextInputType.text,
       textCapitalization: widget.autoCapitalize ?? TextCapitalization.sentences,
       obscureText: widget.isPassword,
       decoration: InputDecoration(
+        label: Text(widget.hintText),
         hintText: widget.hintText,
         border: OutlineInputBorder(
           borderSide: BorderSide.none,

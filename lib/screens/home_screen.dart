@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
@@ -108,16 +110,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     );
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: _auth.currentUser!.photoURL != null
-                        ? CircleAvatar(
-                            radius: 15,
-                            backgroundImage: NetworkImage(
-                              _auth.currentUser!.photoURL!,
-                            ),
-                          )
-                        : const Icon(Icons.person),
+                  child: StreamBuilder(
+                    stream: AuthMethods().getUserDetails(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (snapshot.hasError) {
+                        return const Icon(Icons.person);
+                      }
+                      if (!snapshot.hasData) {
+                        return const Icon(Icons.person);
+                      }
+
+                      return CircleAvatar(
+                        backgroundImage: CachedNetworkImageProvider(
+                          snapshot.data!.data()!['profilePicture'],
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),

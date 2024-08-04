@@ -5,6 +5,8 @@ import 'package:men_matter_too/auth_state_home_page.dart';
 import 'package:men_matter_too/firebase_options.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/screens/login_screen.dart';
+import 'package:men_matter_too/utils/show_snackbar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -24,6 +26,31 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Future<bool> requestPermissions() async {
+    final statuses = await [
+      Permission.photos,
+      Permission.camera,
+      Permission.mediaLibrary,
+    ].request();
+
+    if (statuses[Permission.camera]?.isGranted ?? false) {
+      return true;
+    } else {
+      showSnackbar(
+        context,
+        'Please grant permissions to proceed.',
+        type: TypeOfSnackbar.success,
+      );
+      return false;
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

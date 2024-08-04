@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/screens/edit_profile.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -19,6 +21,14 @@ class ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  CroppedFile? file;
+
+  void setFile(CroppedFile file) {
+    setState(() {
+      this.file = file;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,8 +36,8 @@ class ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(
           horizontal: 20,
         ),
-        child: FutureBuilder(
-          future: AuthMethods().getUserDetails(),
+        child: StreamBuilder(
+          stream: AuthMethods().getUserDetails(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -48,13 +58,25 @@ class ProfilePageState extends State<ProfilePage> {
             return ListView(
               children: [
                 const SizedBox(height: 20),
-                _buildUserHeader(context, snapshot.data!),
+                _buildUserHeader(
+                  context,
+                  MyUser.fromJson(snapshot.data!.data()!),
+                ),
                 const SizedBox(height: 10),
-                _userInformation(context, snapshot.data!),
+                _userInformation(
+                  context,
+                  MyUser.fromJson(snapshot.data!.data()!),
+                ),
                 const SizedBox(height: 10),
-                _userProfileInteraction(context, snapshot.data!),
+                _userProfileInteraction(
+                  context,
+                  MyUser.fromJson(snapshot.data!.data()!),
+                ),
                 const SizedBox(height: 10),
-                _userPosts(context, snapshot.data!),
+                _userPosts(
+                  context,
+                  MyUser.fromJson(snapshot.data!.data()!),
+                ),
               ],
             );
           },
@@ -75,7 +97,15 @@ class ProfilePageState extends State<ProfilePage> {
             height: 35,
             borderRadius: 5,
             backgroundColor: Theme.of(context).colorScheme.primary,
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return const EditProfile();
+                  },
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 10),
@@ -172,36 +202,17 @@ class ProfilePageState extends State<ProfilePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 50,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: CachedNetworkImage(
-                  imageUrl: user.profilePicture,
-                  placeholder: (context, url) =>
-                      const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                  useOldImageOnUrlChange: true,
-                ),
-              ),
+        CircleAvatar(
+          radius: 50,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: CachedNetworkImage(
+              imageUrl: user.profilePicture,
+              placeholder: (context, url) => const CircularProgressIndicator(),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+              useOldImageOnUrlChange: true,
             ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              height: 40,
-              width: 40,
-              child: IconButton(
-                style: IconButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: () {},
-                icon: const Icon(Icons.edit_rounded),
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-            ),
-          ],
+          ),
         ),
         const SizedBox(width: 20),
         _profileStat(

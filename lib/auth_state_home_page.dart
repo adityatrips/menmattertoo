@@ -1,6 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:men_matter_too/models/models.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/home_screen.dart';
 
 class AuthStateHomePage extends StatefulWidget {
@@ -14,8 +13,8 @@ class _AuthStateHomePageState extends State<AuthStateHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<MyUser?>(
-        future: AuthMethods().getUserDetails(),
+      body: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
