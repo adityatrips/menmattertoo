@@ -43,8 +43,4 @@ app.*.map.json
 /android/app/release
 
 firebase.json
-<<<<<<< HEAD
 lib/firebase_options.dart
-=======
-lib/firebase_options.dart
->>>>>>> 86b4d08f428ccef2b38bd53a85d5b9d314cdfb47
