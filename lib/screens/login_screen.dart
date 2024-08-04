@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/signup_screen.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,10 +14,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class LoignScreenState extends State<LoginScreen> {
-  TextEditingController emailController =
-      TextEditingController(text: "adityatripathi.at04@gmail.com");
-  TextEditingController passwordController =
-      TextEditingController(text: "12345678");
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
 
   Future<void> signInUser() async {
     String? response = await AuthMethods().loginUser(

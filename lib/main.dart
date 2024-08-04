@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:men_matter_too/auth_state_home_page.dart';
 import 'package:men_matter_too/firebase_options.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
@@ -10,9 +11,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  Future.delayed(
+    const Duration(milliseconds: 1500),
+    () => FlutterNativeSplash.remove(),
   );
 
   runApp(const MyApp());
