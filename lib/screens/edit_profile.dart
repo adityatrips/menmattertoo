@@ -86,7 +86,9 @@ class EditProfileState extends State<EditProfile> {
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return const MyImagePicker();
+                            return MyImagePicker(
+                              buildContext: context,
+                            );
                           },
                         ),
                       ).then((value) async {

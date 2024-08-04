@@ -41,11 +41,14 @@ class ProfilePageState extends State<ProfilePage> {
           ? null
           : AppBar(
               actions: [
-                SvgPicture.asset(
-                  "assets/logo_extended.svg",
-                  width: 150,
-                  color: Theme.of(context).colorScheme.primary,
-                )
+                Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: SvgPicture.asset(
+                    "assets/logo_extended.svg",
+                    width: 150,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ],
               title: Text(
                 "@${widget.user!.username}",
@@ -276,6 +279,12 @@ class ProfilePageState extends State<ProfilePage> {
             fontSize: 20,
             color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          "@${user.username}",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         Text(
