@@ -1,10 +1,12 @@
 import 'dart:developer';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/screens/profile_page.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 
 class PostsScreen extends StatefulWidget {
   const PostsScreen({super.key});
@@ -14,7 +16,6 @@ class PostsScreen extends StatefulWidget {
 }
 
 class PostsScreenState extends State<PostsScreen> {
-  final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
 
   Future<List<Post>> getPosts() async {
@@ -93,13 +94,24 @@ class PostsScreenState extends State<PostsScreen> {
 
         MyUser user = MyUser.fromSnapshot(snapshot.data!);
         return GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).push(
+              AnimatedRoute(
+                context: context,
+                page: ProfilePage(
+                  user: user,
+                ),
+              ).createRoute(),
+            );
+          },
           child: Card(
             child: Column(
               children: [
                 ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(user.profilePicture),
+                    backgroundImage: CachedNetworkImageProvider(
+                      user.profilePicture,
+                    ),
                   ),
                   title: Text(user.name),
                   subtitle: Text("@${user.username}"),

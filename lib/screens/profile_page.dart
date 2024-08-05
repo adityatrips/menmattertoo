@@ -62,105 +62,106 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             ),
       body: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
-          child: isUser
-              ? StreamBuilder(
-                  stream: AuthMethods().getUserDetails(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(snapshot.error.toString()),
-                      );
-                    }
-                    if (!snapshot.hasData) {
-                      return const Center(
-                        child: Text("No data found"),
-                      );
-                    }
-
-                    return ListView(
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildUserHeader(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                        const SizedBox(height: 10),
-                        _userInformation(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                        const SizedBox(height: 10),
-                        _userProfileInteraction(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                          isUser: isUser,
-                        ),
-                        const SizedBox(height: 10),
-                        _userPosts(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                      ],
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
+        child: isUser
+            ? StreamBuilder(
+                stream: AuthMethods().getUserDetails(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
                     );
-                  },
-                )
-              : StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .collection("users")
-                      .doc(widget.user!.uid)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(snapshot.error.toString()),
-                      );
-                    }
-                    if (!snapshot.hasData) {
-                      return const Center(
-                        child: Text("No data found"),
-                      );
-                    }
-
-                    return ListView(
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildUserHeader(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                        const SizedBox(height: 10),
-                        _userInformation(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                        const SizedBox(height: 10),
-                        _userProfileInteraction(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                          isUser: isUser,
-                        ),
-                        const SizedBox(height: 10),
-                        _userPosts(
-                          context,
-                          MyUser.fromJson(snapshot.data!.data()!),
-                        ),
-                      ],
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(snapshot.error.toString()),
                     );
-                  },
-                )),
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: Text("No data found"),
+                    );
+                  }
+
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildUserHeader(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                      const SizedBox(height: 10),
+                      _userInformation(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                      const SizedBox(height: 10),
+                      _userProfileInteraction(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                        isUser: isUser,
+                      ),
+                      const SizedBox(height: 10),
+                      _userPosts(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                    ],
+                  );
+                },
+              )
+            : StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection("users")
+                    .doc(widget.user!.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(snapshot.error.toString()),
+                    );
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: Text("No data found"),
+                    );
+                  }
+
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildUserHeader(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                      const SizedBox(height: 10),
+                      _userInformation(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                      const SizedBox(height: 10),
+                      _userProfileInteraction(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                        isUser: isUser,
+                      ),
+                      const SizedBox(height: 10),
+                      _userPosts(
+                        context,
+                        MyUser.fromJson(snapshot.data!.data()!),
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
     );
   }
 
@@ -263,8 +264,27 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ],
       );
+    } else {
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        itemCount: user.posts.length,
+        itemBuilder: (context, index) {
+          return Column(
+            children: [
+              CachedNetworkImage(
+                imageUrl: user.posts[index],
+                placeholder: (context, url) =>
+                    const CircularProgressIndicator(),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+                useOldImageOnUrlChange: true,
+              ),
+              const SizedBox(height: 10),
+            ],
+          );
+        },
+      );
     }
-    return Container();
   }
 
   // * User posts starts here

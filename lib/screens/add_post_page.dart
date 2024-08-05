@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
@@ -20,8 +19,6 @@ class AddPostPage extends StatefulWidget {
 class AddPostPageState extends State<AddPostPage> {
   final title = TextEditingController();
   final caption = TextEditingController();
-
-  final _auth = FirebaseAuth.instance;
 
   Uint8List? file;
 

@@ -23,13 +23,7 @@ class NotificationScreenState extends State<NotificationScreen> {
           horizontal: 20,
         ),
         child: Center(
-          child: ListView(
-            children: [
-              const SizedBox(height: 20),
-              _notificationList(),
-              const SizedBox(height: 20),
-            ],
-          ),
+          child: _notificationList(),
         ),
       ),
     );
@@ -51,6 +45,7 @@ class NotificationScreenState extends State<NotificationScreen> {
           final notifications = data.get('notifications') as List<dynamic>;
 
           return ListView.builder(
+            reverse: true,
             shrinkWrap: true,
             itemCount: notifications.length,
             itemBuilder: (context, index) {

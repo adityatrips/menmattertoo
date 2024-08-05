@@ -191,11 +191,20 @@ class AuthMethods {
     String res = "Some internal error occurred. Please try again later";
 
     try {
-      final storageRef =
-          _storage.ref().child('posts').child(_auth.currentUser!.uid);
+      final docRef = _firestore.collection('posts').doc();
+      final userRef =
+          _firestore.collection('users').doc(_auth.currentUser!.uid);
+
+      await userRef.update({
+        'posts': FieldValue.arrayUnion([docRef.id]),
+      });
+
+      final storageRef = _storage.ref().child(
+            'posts/${_auth.currentUser!.uid}/${docRef.id}',
+          );
+
       final uploadTask = await storageRef.putData(file);
       final url = await uploadTask.ref.getDownloadURL();
-      final postRef = _firestore.collection('posts').doc();
 
       final post = Post(
         title: title,
@@ -204,10 +213,10 @@ class AuthMethods {
         author: _auth.currentUser!.uid,
         likes: [],
         comments: [],
-        postUid: postRef.id,
+        postUid: docRef.id,
       );
 
-      await _firestore.collection('posts').add(post.toJson());
+      await docRef.set(post.toJson());
       res = "success";
       await addNotificationToProfile(
         uid: _auth.currentUser!.uid,
