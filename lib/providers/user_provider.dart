@@ -4,6 +4,7 @@ import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 
 class UserProvider with ChangeNotifier {
+  // ignore: unused_field
   MyUser? _user;
 
   Future<String> getAndSetUser(String uid) async {
