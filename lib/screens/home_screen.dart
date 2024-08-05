@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/screens/add_post_page.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/screens/search_page.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -135,7 +137,15 @@ class _HomeScreenState extends State<HomeScreen> {
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
-            onPressed: null,
+            onPressed: () {
+              Navigator.push(
+                context,
+                AnimatedRoute(
+                  context: context,
+                  page: const AddPostPage(),
+                ).createRoute(),
+              );
+            },
             shape: const CircleBorder(),
             backgroundColor: Theme.of(context).colorScheme.primary,
             child: const Icon(Icons.add),

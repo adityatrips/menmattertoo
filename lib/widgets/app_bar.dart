@@ -25,7 +25,7 @@ PreferredSizeWidget myAppBar(BuildContext context) {
           color: Colors.blue.shade700,
         ),
         onPressed: () async {
-          String logout = await AuthMethods().logout();
+          String logout = await AuthMethods().logout(context);
           if (logout == "success") {
             showSnackbar(context, "Logout successful");
             return;

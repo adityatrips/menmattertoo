@@ -9,6 +9,9 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/edit_profile.dart';
+import 'package:men_matter_too/screens/followers_page.dart';
+import 'package:men_matter_too/screens/following_page.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -177,11 +180,10 @@ class ProfilePageState extends State<ProfilePage> {
               height: 35,
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return const EditProfile();
-                    },
-                  ),
+                  AnimatedRoute(
+                    context: context,
+                    page: const EditProfile(),
+                  ).createRoute(),
                 );
               },
             ),
@@ -332,6 +334,7 @@ class ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(width: 20),
         _profileStat(
+          user: user,
           postsLength: user.posts.length,
           followingLength: user.following.length,
           followersLength: user.followers.length,
@@ -341,6 +344,7 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Expanded _profileStat({
+    required MyUser user,
     required int postsLength,
     required int followingLength,
     required int followersLength,
@@ -350,8 +354,28 @@ class ProfilePageState extends State<ProfilePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _individualStat(postsLength, "Posts"),
-          _individualStat(followingLength, "Following"),
-          _individualStat(followersLength, "Followers"),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                AnimatedRoute(
+                  context: context,
+                  page: FollowingPage(user: user),
+                ).createRoute(),
+              );
+            },
+            child: _individualStat(followingLength, "Following"),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                AnimatedRoute(
+                  context: context,
+                  page: FollowersPage(user: user),
+                ).createRoute(),
+              );
+            },
+            child: _individualStat(followersLength, "Followers"),
+          ),
         ],
       ),
     );
@@ -360,25 +384,29 @@ class ProfilePageState extends State<ProfilePage> {
   SizedBox _individualStat(int statLength, String stat) {
     return SizedBox(
       width: (MediaQuery.of(context).size.width - 160) / 3,
-      child: Column(
-        children: [
-          Text(
-            "$statLength",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 18,
+      height: (MediaQuery.of(context).size.width - 160) / 3,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "$statLength",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 18,
+              ),
             ),
-          ),
-          Text(
-            stat,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          )
-        ],
+            Text(
+              stat,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

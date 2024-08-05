@@ -4,43 +4,85 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class AuthMethods {
   final _auth = FirebaseAuth.instance;
   final _storage = FirebaseStorage.instance;
   final _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<User?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+
+      UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+
+      await _auth.currentUser!.updatePhotoURL(
+        userCredential.user!.photoURL,
+      );
+      await _firestore.doc("users/${userCredential.user!.uid}").update({
+        'profilePicture': userCredential.user!.photoURL,
+      });
+
+      return userCredential.user;
+    } catch (e) {
+      log(e.toString());
+    }
+    return null;
+  }
 
   Future<String> updateProfile({
     required String name,
     required String username,
     required String bio,
-    required CroppedFile file,
+    CroppedFile? file,
   }) async {
     String res = "Some internal error occurred. Please try again later";
 
     try {
       User currentUser = _auth.currentUser!;
-
       final ref = _firestore.collection('users').doc(currentUser.uid);
-      final storageRef = _storage
-          .ref()
-          .child('profile_pictures')
-          .child(_auth.currentUser!.uid);
 
-      final uploadTask = await storageRef.putFile(
-        File(file.path),
-      );
+      if (file != null) {
+        final storageRef = _storage
+            .ref()
+            .child('profile_pictures')
+            .child(_auth.currentUser!.uid);
 
-      final url = await uploadTask.ref.getDownloadURL();
+        final uploadTask = await storageRef.putFile(
+          File(file.path),
+        );
 
-      ref.update({
-        'name': name,
-        'username': username,
-        'bio': bio,
-        'profilePicture': url,
-      });
+        final url = await uploadTask.ref.getDownloadURL();
+        ref.update({
+          'name': name,
+          'username': username,
+          'bio': bio,
+          'profilePicture': url,
+        });
+      } else {
+        ref.update({
+          'name': name,
+          'username': username,
+          'bio': bio,
+        });
+      }
 
       res = "success";
     } on FirebaseAuthException catch (e) {
@@ -176,6 +218,15 @@ class AuthMethods {
     log("Followers: $otherFollowers");
   }
 
+  Future<DocumentSnapshot<Map<String, dynamic>>> getUserDetailsF(String uid) {
+    return _firestore
+        .collection('users')
+        .doc(
+          uid,
+        )
+        .get();
+  }
+
   Stream<DocumentSnapshot<Map<String, dynamic>>> getUserDetails() {
     User currentUser = _auth.currentUser!;
 
@@ -258,8 +309,9 @@ class AuthMethods {
     return res;
   }
 
-  Future<String> logout() async {
+  Future<String> logout(BuildContext context) async {
     String res = "Some internal error occurred. Please try again later";
+    Provider.of<UserProvider>(context, listen: false).setUser(null);
     try {
       await _auth.signOut();
       res = "success";

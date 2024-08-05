@@ -9,6 +9,7 @@ class TextFieldInput extends StatefulWidget {
   final TextEditingController controller;
   final bool multiline;
   final int? maxLength;
+  final String? Function(String?)? validator;
 
   const TextFieldInput({
     super.key,
@@ -20,6 +21,7 @@ class TextFieldInput extends StatefulWidget {
     this.textInputType,
     this.multiline = false,
     this.maxLength,
+    this.validator,
   });
 
   @override
@@ -29,8 +31,9 @@ class TextFieldInput extends StatefulWidget {
 class TextFieldInputState extends State<TextFieldInput> {
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      minLines: null,
+    return TextFormField(
+      validator: widget.validator,
+      minLines: 1,
       maxLines: widget.multiline ? 5 : 1,
       maxLength: widget.maxLength,
       controller: widget.controller,

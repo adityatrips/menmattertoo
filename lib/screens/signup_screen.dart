@@ -1,7 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/login_screen.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
@@ -21,29 +25,34 @@ class LoignScreenState extends State<SignupScreen> {
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
 
-  Future<void> signInUser() async {
-    String? response = await AuthMethods().signUpUser(
-      bio: bioController.text,
-      email: emailController.text,
-      name: nameController.text,
-      password: passwordController.text,
-      role: "USER",
-      username: usernameController.text,
-    );
+  final _formKey = GlobalKey<FormState>();
 
-    if (response == "success") {
+  Future<void> signInUser() async {
+    log("Form Valid?: ${_formKey.currentState!.validate()}");
+    if (_formKey.currentState!.validate()) {
+      String? response = await AuthMethods().signUpUser(
+        bio: bioController.text,
+        email: emailController.text,
+        name: nameController.text,
+        password: passwordController.text,
+        role: "USER",
+        username: usernameController.text,
+      );
+
+      if (response == "success") {
+        showSnackbar(
+          context,
+          "Thank you for showing support. Welcome aboard!",
+        );
+        return;
+      }
+
       showSnackbar(
         context,
-        "Thank you for showing support. Welcome aboard!",
+        response,
+        type: TypeOfSnackbar.error,
       );
-      return;
-    }
-
-    showSnackbar(
-      context,
-      response,
-      type: TypeOfSnackbar.error,
-    );
+    } else {}
     return;
   }
 
@@ -76,31 +85,74 @@ class LoignScreenState extends State<SignupScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  TextFieldInput(
-                    controller: nameController,
-                    hintText: "Enter your name",
-                    autoCapitalize: TextCapitalization.words,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFieldInput(
-                    controller: usernameController,
-                    hintText: "Enter your username",
-                  ),
-                  const SizedBox(height: 10),
-                  TextFieldInput(
-                    controller: emailController,
-                    hintText: "Enter your email",
-                    textInputType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFieldInput(
-                    controller: passwordController,
-                    hintText: "Enter your password",
-                  ),
-                  const SizedBox(height: 10),
-                  TextFieldInput(
-                    controller: confirmPasswordController,
-                    hintText: "Re-enter your password",
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFieldInput(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your name";
+                            }
+                            return null;
+                          },
+                          controller: nameController,
+                          hintText: "Enter your name",
+                          autoCapitalize: TextCapitalization.words,
+                        ),
+                        const SizedBox(height: 10),
+                        TextFieldInput(
+                          controller: usernameController,
+                          hintText: "Enter your username",
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter an username";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextFieldInput(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter an email address";
+                            } else if (!value.isEmail) {
+                              return "Please enter a valid email address";
+                            }
+                            return null;
+                          },
+                          controller: emailController,
+                          hintText: "Enter your email",
+                          textInputType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 10),
+                        TextFieldInput(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter a password";
+                            }
+                            if (value.length <= 6 || value.length >= 20) {
+                              return "Passwords should be of 6-20 characters";
+                            }
+                            return null;
+                          },
+                          controller: passwordController,
+                          hintText: "Enter your password",
+                        ),
+                        const SizedBox(height: 10),
+                        TextFieldInput(
+                          validator: (value) {
+                            if (value != passwordController.text) {
+                              return "Both passwords do not match";
+                            }
+
+                            return null;
+                          },
+                          controller: confirmPasswordController,
+                          hintText: "Re-enter your password",
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 10),
                   CustomButton(
@@ -118,13 +170,14 @@ class LoignScreenState extends State<SignupScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.maybePop(context);
+                          await Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
+                            AnimatedRoute(
+                              context: context,
+                              page: const LoginScreen(),
+                            ).createRoute(),
                           );
                         },
                         child: Text(

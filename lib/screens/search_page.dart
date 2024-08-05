@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -135,11 +136,12 @@ class SearchPageState extends State<SearchPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) {
-                  return ProfilePage(
+                AnimatedRoute(
+                  context: context,
+                  page: ProfilePage(
                     user: user,
-                  );
-                }),
+                  ),
+                ).createRoute(),
               );
             },
             icon: const Icon(Icons.chevron_right),

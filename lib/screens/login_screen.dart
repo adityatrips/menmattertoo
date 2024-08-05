@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/signup_screen.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
@@ -17,27 +19,36 @@ class LoignScreenState extends State<LoginScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
-  Future<void> signInUser() async {
-    String? response = await AuthMethods().loginUser(
-      email: emailController.text,
-      password: passwordController.text,
-    );
+  final _formKey = GlobalKey<FormState>();
 
-    if (response == "success") {
-      showSnackbar(
-        context,
-        "Welcome back cap'n. We awaited your arrival.",
-        type: TypeOfSnackbar.success,
-      );
-      return;
+  Future<void> signInUser({bool google = false}) async {
+    if (!google) {
+      if (_formKey.currentState!.validate() ||
+          !_formKey.currentState!.validate()) {
+        String? response = await AuthMethods().loginUser(
+          email: emailController.text,
+          password: passwordController.text,
+        );
+
+        if (response == "success") {
+          showSnackbar(
+            context,
+            "Welcome back cap'n. We awaited your arrival.",
+            type: TypeOfSnackbar.success,
+          );
+          return;
+        }
+
+        showSnackbar(
+          context,
+          response,
+          type: TypeOfSnackbar.error,
+        );
+        return;
+      }
+    } else {
+      await AuthMethods().signInWithGoogle();
     }
-
-    showSnackbar(
-      context,
-      response,
-      type: TypeOfSnackbar.error,
-    );
-    return;
   }
 
   @override
@@ -68,21 +79,48 @@ class LoignScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 10),
-                TextFieldInput(
-                  controller: emailController,
-                  hintText: "Enter your email",
-                  textInputType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 10),
-                TextFieldInput(
-                  controller: passwordController,
-                  hintText: "Enter your password",
-                  isPassword: true,
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFieldInput(
+                        controller: emailController,
+                        hintText: "Enter your email",
+                        textInputType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter an email address";
+                          }
+                          if (!value.isEmail) {
+                            return "Please enter a valid email address";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextFieldInput(
+                        controller: passwordController,
+                        hintText: "Enter your password",
+                        isPassword: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter a password";
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 10),
                 CustomButton(
                   onTap: signInUser,
                   buttonText: "Login",
+                ),
+                const SizedBox(height: 10),
+                CustomButton(
+                  onTap: () => signInUser(google: true),
+                  buttonText: "Continue with Google",
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -95,13 +133,14 @@ class LoignScreenState extends State<LoginScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
+                      onTap: () async {
+                        await Navigator.maybePop(context);
+                        await Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const SignupScreen(),
-                          ),
+                          AnimatedRoute(
+                            context: context,
+                            page: const SignupScreen(),
+                          ).createRoute(),
                         );
                       },
                       child: Text(

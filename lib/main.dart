@@ -2,10 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:men_matter_too/auth_state_home_page.dart';
 import 'package:men_matter_too/firebase_options.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/screens/edit_profile.dart';
+import 'package:men_matter_too/screens/home_screen.dart';
 import 'package:men_matter_too/screens/login_screen.dart';
+import 'package:men_matter_too/screens/profile_page.dart';
+import 'package:men_matter_too/screens/search_page.dart';
+import 'package:men_matter_too/screens/signup_screen.dart';
+import 'package:men_matter_too/utils/pick_image.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +63,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'Men Matter Too',
         theme: ThemeData(
           colorScheme: const ColorScheme.dark().copyWith(
             primary: Colors.blue.shade700,
@@ -70,24 +75,39 @@ class _MyAppState extends State<MyApp> {
           fontFamily: 'DMSans',
           iconTheme: IconThemeData(color: Colors.blue.shade700),
         ),
-        home: StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(color: Colors.blue.shade900),
-              );
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(snapshot.error.toString()),
-              );
-            }
-            if (snapshot.hasData) {
-              return const AuthStateHomePage();
-            }
-            return const LoginScreen();
-          },
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const SignupScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/profile': (context) => const ProfilePage(),
+          '/search': (context) => const SearchPage(),
+          '/edit': (context) => const EditProfile(),
+          '/crop': (context) => MyImagePicker(buildContext: context),
+        },
+        home: Scaffold(
+          body: StreamBuilder(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(color: Colors.blue.shade900),
+                );
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(snapshot.error.toString()),
+                );
+              }
+              if (snapshot.hasData || snapshot.data != null) {
+                Provider.of<UserProvider>(context)
+                    .getAndSetUser(snapshot.data!.uid);
+                return const Center(
+                  child: HomeScreen(),
+                );
+              }
+              return const LoginScreen();
+            },
+          ),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/utils/pick_image.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
@@ -84,13 +85,12 @@ class EditProfileState extends State<EditProfile> {
                     onTap: () async {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return MyImagePicker(
-                              buildContext: context,
-                            );
-                          },
-                        ),
+                        AnimatedRoute(
+                          context: context,
+                          page: MyImagePicker(
+                            buildContext: context,
+                          ),
+                        ).createRoute(),
                       ).then((value) async {
                         setState(() {
                           file = value!;
@@ -114,6 +114,7 @@ class EditProfileState extends State<EditProfile> {
                   TextFieldInput(
                     controller: bioController,
                     hintText: 'Bio',
+                    textInputType: TextInputType.multiline,
                     maxLength: 250,
                     multiline: true,
                     autoCapitalize: TextCapitalization.sentences,
@@ -133,7 +134,7 @@ class EditProfileState extends State<EditProfile> {
                         bio: bioController.text,
                         name: nameController.text,
                         username: usernameController.text,
-                        file: file!,
+                        file: file,
                       );
                       Navigator.pop(context);
                       Navigator.pop(context);
