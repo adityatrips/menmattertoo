@@ -1,8 +1,8 @@
-import 'dart:io';
+import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
@@ -23,7 +23,14 @@ class EditProfileState extends State<EditProfile> {
   final nameController = TextEditingController();
   final usernameController = TextEditingController();
 
-  CroppedFile? file;
+  Uint8List? file;
+
+  void setFile(Uint8List? file) {
+    setState(() {
+      this.file = file;
+    });
+    log(file.toString());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +70,9 @@ class EditProfileState extends State<EditProfile> {
                 children: [
                   const SizedBox(height: 20),
                   CircleAvatar(
-                    radius: 100,
+                    radius: 50,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(100),
+                      borderRadius: BorderRadius.circular(50),
                       child: file == null
                           ? CachedNetworkImage(
                               imageUrl: user.profilePicture,
@@ -75,9 +82,7 @@ class EditProfileState extends State<EditProfile> {
                                   const Icon(Icons.error),
                               useOldImageOnUrlChange: true,
                             )
-                          : Image.file(
-                              File(file!.path),
-                            ),
+                          : Image.memory(file!),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -88,14 +93,10 @@ class EditProfileState extends State<EditProfile> {
                         AnimatedRoute(
                           context: context,
                           page: MyImagePicker(
-                            buildContext: context,
+                            setFile: setFile,
                           ),
                         ).createRoute(),
-                      ).then((value) async {
-                        setState(() {
-                          file = value!;
-                        });
-                      });
+                      );
                     },
                     buttonText: "Edit profile picture",
                   ),

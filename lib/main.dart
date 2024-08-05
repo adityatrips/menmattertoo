@@ -10,7 +10,6 @@ import 'package:men_matter_too/screens/login_screen.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/screens/search_page.dart';
 import 'package:men_matter_too/screens/signup_screen.dart';
-import 'package:men_matter_too/utils/pick_image.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +81,6 @@ class _MyAppState extends State<MyApp> {
           '/profile': (context) => const ProfilePage(),
           '/search': (context) => const SearchPage(),
           '/edit': (context) => const EditProfile(),
-          '/crop': (context) => MyImagePicker(buildContext: context),
         },
         home: Scaffold(
           body: StreamBuilder(

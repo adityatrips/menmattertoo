@@ -1,12 +1,12 @@
 import 'dart:developer';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:intl/intl.dart';
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:provider/provider.dart';
@@ -40,6 +40,10 @@ class AuthMethods {
         'profilePicture': userCredential.user!.photoURL,
       });
 
+      await addNotificationToProfile(
+        uid: userCredential.user!.uid,
+        notification: "You signed in with Google",
+      );
       return userCredential.user;
     } catch (e) {
       log(e.toString());
@@ -51,7 +55,7 @@ class AuthMethods {
     required String name,
     required String username,
     required String bio,
-    CroppedFile? file,
+    Uint8List? file,
   }) async {
     String res = "Some internal error occurred. Please try again later";
 
@@ -65,9 +69,7 @@ class AuthMethods {
             .child('profile_pictures')
             .child(_auth.currentUser!.uid);
 
-        final uploadTask = await storageRef.putFile(
-          File(file.path),
-        );
+        final uploadTask = await storageRef.putData(file);
 
         final url = await uploadTask.ref.getDownloadURL();
         ref.update({
@@ -76,6 +78,7 @@ class AuthMethods {
           'bio': bio,
           'profilePicture': url,
         });
+        await _auth.currentUser!.updatePhotoURL(url);
       } else {
         ref.update({
           'name': name,
@@ -85,6 +88,10 @@ class AuthMethods {
       }
 
       res = "success";
+      await addNotificationToProfile(
+        uid: _auth.currentUser!.uid,
+        notification: "You updated your profile",
+      );
     } on FirebaseAuthException catch (e) {
       res = e.message ?? "Some internal error occurred. Please try again later";
     } catch (e) {
@@ -94,7 +101,7 @@ class AuthMethods {
     return res;
   }
 
-  Future<String> updateProfilePicture(CroppedFile file) async {
+  Future<String> updateProfilePicture(Uint8List file) async {
     String res = "Some internal error occurred. Please try again later";
 
     try {
@@ -106,9 +113,7 @@ class AuthMethods {
           .child('profile_pictures')
           .child(_auth.currentUser!.uid);
 
-      final uploadTask = await storageRef.putFile(
-        File(file.path),
-      );
+      final uploadTask = await storageRef.putData(file);
 
       final url = await uploadTask.ref.getDownloadURL();
 
@@ -118,6 +123,10 @@ class AuthMethods {
       _auth.currentUser!.updatePhotoURL(url);
 
       res = "success";
+      await addNotificationToProfile(
+        uid: _auth.currentUser!.uid,
+        notification: "You updated your profile picture",
+      );
     } on FirebaseAuthException catch (e) {
       res = e.message ?? "Some internal error occurred. Please try again later";
     } catch (e) {
@@ -174,6 +183,43 @@ class AuthMethods {
     }
   }
 
+  Future<String> uploadPost({
+    required String title,
+    required String caption,
+    required Uint8List file,
+  }) async {
+    String res = "Some internal error occurred. Please try again later";
+
+    try {
+      final storageRef =
+          _storage.ref().child('posts').child(_auth.currentUser!.uid);
+      final uploadTask = await storageRef.putData(file);
+      final url = await uploadTask.ref.getDownloadURL();
+      final postRef = _firestore.collection('posts').doc();
+
+      final post = Post(
+        title: title,
+        caption: caption,
+        img: url,
+        author: _auth.currentUser!.uid,
+        likes: [],
+        comments: [],
+        postUid: postRef.id,
+      );
+
+      await _firestore.collection('posts').add(post.toJson());
+      res = "success";
+      await addNotificationToProfile(
+        uid: _auth.currentUser!.uid,
+        notification: "You uploaded a post",
+      );
+    } catch (e) {
+      res = e.toString();
+    }
+
+    return res;
+  }
+
   Future<void> followAndUnfollowUser({
     required String selfUid,
     required String otherUid,
@@ -201,9 +247,27 @@ class AuthMethods {
     if (selfFollowing.contains(otherUid)) {
       selfFollowing.remove(otherUid);
       otherFollowers.remove(selfUid);
+
+      await addNotificationToProfile(
+        uid: _auth.currentUser!.uid,
+        notification: "You unfollowed ${otherDoc.data()!['name']}",
+      );
+      await addNotificationToProfile(
+        uid: otherDoc.id,
+        notification: "${selfDoc.data()!['name']} unfollowed you",
+      );
     } else {
       selfFollowing.add(otherUid);
       otherFollowers.add(selfUid);
+
+      await addNotificationToProfile(
+        uid: _auth.currentUser!.uid,
+        notification: "You followed ${otherDoc.data()!['name']}",
+      );
+      await addNotificationToProfile(
+        uid: otherDoc.id,
+        notification: "${selfDoc.data()!['name']} followed you",
+      );
     }
 
     await selfRef.update({
@@ -276,7 +340,9 @@ class AuthMethods {
           .doc(
             userCred.user!.uid,
           )
-          .set(user.toJson());
+          .set(
+            user.toJson(),
+          );
 
       res = "success";
     } on FirebaseAuthException catch (err) {
@@ -305,8 +371,30 @@ class AuthMethods {
           err.message ?? "Some internal error occurred. Please try again later";
     }
 
+    await addNotificationToProfile(
+      uid: _auth.currentUser!.uid,
+      notification: "You signed in using email and password",
+    );
     log(res);
     return res;
+  }
+
+  Future<void> addNotificationToProfile({
+    required String uid,
+    required String notification,
+  }) {
+    String timestamp = DateFormat.yMMMMd().add_jm().format(DateTime.now());
+
+    return _firestore.collection('users').doc(uid).update({
+      'notifications': FieldValue.arrayUnion(
+        [
+          {
+            'notification': notification,
+            'timestamp': timestamp,
+          }
+        ],
+      ),
+    });
   }
 
   Future<String> logout(BuildContext context) async {

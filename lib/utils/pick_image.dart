@@ -1,16 +1,15 @@
-import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:men_matter_too/utils/show_snackbar.dart';
 
 class MyImagePicker extends StatefulWidget {
-  final BuildContext buildContext;
+  final void Function(Uint8List?) setFile;
 
   const MyImagePicker({
     super.key,
-    required this.buildContext,
+    required this.setFile,
   });
 
   @override
@@ -19,52 +18,42 @@ class MyImagePicker extends StatefulWidget {
 
 class _MyImagePickerState extends State<MyImagePicker> {
   final ImagePicker picker = ImagePicker();
-  XFile? image;
-  CroppedFile? croppedFile;
+  Uint8List? croppedFile;
 
   Future<void> _pickImage() async {
-    try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    XFile? im = await picker.pickImage(source: ImageSource.gallery);
+    Uint8List? croppedFile = await _getCropped(im?.path);
 
-      if (image == null) {
-        throw Exception('File is null');
-      }
-
-      setState(() {
-        this.image = image;
-      });
-      await _getCropped();
-    } catch (e) {
-      Navigator.pop(widget.buildContext);
-      log("message: Can't crop because image is not selected");
-      showSnackbar(
-        widget.buildContext,
-        "Can't crop because image is not selected",
-        type: TypeOfSnackbar.error,
-      );
+    if (croppedFile == null) {
+      widget.setFile(null);
+    } else {
+      widget.setFile(croppedFile);
+      Navigator.pop(context);
     }
+    return;
   }
 
-  Future<CroppedFile> _getCropped() async {
-    CroppedFile? file = await ImageCropper().cropImage(
-      sourcePath: image!.path,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Cropper',
-          toolbarColor: Colors.grey.shade900,
-          toolbarWidgetColor: Colors.white,
-          hideBottomControls: true,
-          lockAspectRatio: true,
-          initAspectRatio: CropAspectRatioPreset.square,
-        ),
-      ],
-    );
+  Future<Uint8List?> _getCropped(String? imPath) async {
+    try {
+      CroppedFile? file = await ImageCropper().cropImage(
+        sourcePath: imPath ?? '',
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Colors.grey.shade900,
+            toolbarWidgetColor: Colors.white,
+            hideBottomControls: true,
+            lockAspectRatio: true,
+            initAspectRatio: CropAspectRatioPreset.square,
+          ),
+        ],
+      );
 
-    if (file == null) {
-      throw Exception('File is null');
+      return file!.readAsBytes().then((val) => val);
+    } catch (e) {
+      Navigator.pop(context);
     }
-    Navigator.pop(widget.buildContext, file);
-    return file;
+    return null;
   }
 
   @override

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/resources/auth_methods.dart';
 import 'package:men_matter_too/screens/add_post_page.dart';
+import 'package:men_matter_too/screens/notification_screen.dart';
+import 'package:men_matter_too/screens/posts_screen.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/screens/search_page.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
@@ -17,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int currentIndex = 1;
+  int currentIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
           body: IndexedStack(
             index: currentIndex,
             children: const [
-              Center(
-                child: Text("Hello"),
-              ),
+              PostsScreen(),
               SearchPage(),
-              Center(
-                child: Text("Notifications"),
-              ),
+              NotificationScreen(),
               ProfilePage(),
             ],
           ),

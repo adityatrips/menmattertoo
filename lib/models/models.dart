@@ -65,3 +65,74 @@ class MyUser {
     );
   }
 }
+
+class Post {
+  final String title;
+  final String caption;
+  final String img;
+  final String author;
+  final String postUid;
+  final List<dynamic> likes;
+  final List<Comments> comments;
+
+  Post({
+    required this.title,
+    required this.caption,
+    required this.img,
+    required this.author,
+    required this.postUid,
+    required this.likes,
+    required this.comments,
+  });
+
+  Map<String, dynamic> toJson() => {
+        "title": title,
+        "caption": caption,
+        "img": img,
+        "author": author,
+        "postUid": postUid,
+        "likes": likes,
+        "comments": comments,
+      };
+
+  static Post fromSnapshot(DocumentSnapshot snapshot) {
+    var snap = snapshot.data() as Map<String, dynamic>;
+    return Post(
+      title: snap["title"],
+      caption: snap["caption"],
+      img: snap["img"],
+      author: snap["author"],
+      postUid: snap["postUid"],
+      likes: List<dynamic>.from(snap["likes"]),
+      comments: List<Comments>.from(snap["comments"]),
+    );
+  }
+}
+
+class Comments {
+  final String comment;
+  final String author;
+  final String commentUid;
+
+  Comments({
+    required this.comment,
+    required this.author,
+    required this.commentUid,
+  });
+
+  Map<String, dynamic> toJson() => {
+        "comment": comment,
+        "author": author,
+        "commentUid": commentUid,
+      };
+
+  static Comments fromSnapshot(DocumentSnapshot snapshot) {
+    var snap = snapshot.data() as Map<String, dynamic>;
+
+    return Comments(
+      comment: snap['comment'],
+      author: snap['author'],
+      commentUid: snap['commentUid'],
+    );
+  }
+}
