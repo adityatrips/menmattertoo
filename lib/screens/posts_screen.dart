@@ -1,12 +1,23 @@
-import 'dart:developer';
-
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/models/models.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/screens/one_post_page.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
+import 'package:men_matter_too/utils/loading_indicator.dart';
+import 'package:men_matter_too/widgets/custom_button.dart';
+import 'package:provider/provider.dart';
+
+class PostAuthor {
+  final Post posts;
+  final MyUser user;
+
+  PostAuthor({
+    required this.posts,
+    required this.user,
+  });
+}
 
 class PostsScreen extends StatefulWidget {
   const PostsScreen({super.key});
@@ -16,98 +27,109 @@ class PostsScreen extends StatefulWidget {
 }
 
 class PostsScreenState extends State<PostsScreen> {
-  final _firestore = FirebaseFirestore.instance;
+  @override
+  void initState() {
+    Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).getAllUsers();
 
-  Future<List<Post>> getPosts() async {
-    final posts = await _firestore.collection("posts").get();
-    List<Post> postsList = [];
+    Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).getLoggedInUser();
 
-    for (var post in posts.docs) {
-      postsList.add(Post.fromSnapshot(post));
-    }
-
-    log(postsList.toString());
-
-    return postsList;
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
-          child: ListView(
-            children: [
-              const SizedBox(height: 20),
-              FutureBuilder(
-                future: getPosts(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  }
-
-                  if (snapshot.hasError) {
-                    return const Text("An error occurred");
-                  }
-
-                  List<Post> post = snapshot.data!;
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const ClampingScrollPhysics(),
-                    itemCount: post.length,
-                    itemBuilder: (context, index) {
-                      return Column(
-                        children: [
-                          _postsCard(post[index]),
-                        ],
-                      );
-                    },
-                  );
-                },
+    return RefreshIndicator(
+      onRefresh: () => Provider.of<UserProvider>(
+        context,
+        listen: false,
+      ).getAllPosts(),
+      child: Consumer<UserProvider>(
+        builder: (context, user, _) {
+          if (user.posts == null) {
+            user.getAllPosts();
+            return const LoadingIndicator();
+          } else if (user.posts!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Oops! No one has posted yet.",
+                    style: TextStyle(
+                      fontFamily: "BN",
+                      fontSize: 20,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  CustomButton(
+                    buttonText: "Refresh",
+                    onTap: () => user.getAllPosts(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+            );
+          } else {
+            return Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
+                  top: 20,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: user.posts!.length,
+                  itemBuilder: (context, index) {
+                    return _postsCard(user.posts![index], user);
+                  },
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }
 
-  Widget _postsCard(Post post) {
+  Widget _postsCard(Post post, UserProvider user) {
     return FutureBuilder(
-      future: AuthMethods().getUserDetailsF(post.author),
+      future: post.author.get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const SizedBox.shrink();
         }
 
         if (snapshot.hasError) {
-          return const Text("An error occurred");
+          return Center(
+            child: Text(
+              "Error: ${snapshot.error}",
+            ),
+          );
         }
 
-        if (snapshot.data == null) {
-          return const Text("An error occurred");
-        }
-
-        MyUser user = MyUser.fromSnapshot(snapshot.data!);
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              AnimatedRoute(
-                context: context,
-                page: ProfilePage(
-                  user: user,
-                ),
-              ).createRoute(),
-            );
-          },
-          child: Card(
-            child: Column(
-              children: [
-                ListTile(
+        final user = MyUser.fromSnapshot(snapshot.data!);
+        return Card(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    AnimatedRoute(
+                      context: context,
+                      page: ProfilePage(
+                        user: user,
+                      ),
+                    ).createRoute(),
+                  );
+                },
+                child: ListTile(
                   leading: CircleAvatar(
                     backgroundImage: CachedNetworkImageProvider(
                       user.profilePicture,
@@ -116,19 +138,60 @@ class PostsScreenState extends State<PostsScreen> {
                   title: Text(user.name),
                   subtitle: Text("@${user.username}"),
                 ),
-                Image.network(post.img),
-                ListTile(
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    AnimatedRoute(
+                      context: context,
+                      page: OnePostPage(post: post),
+                    ).createRoute(),
+                  );
+                },
+                child: CachedNetworkImage(
+                  imageUrl: post.img,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    AnimatedRoute(
+                      context: context,
+                      page: OnePostPage(post: post),
+                    ).createRoute(),
+                  );
+                },
+                child: ListTile(
                   title: Text(
                     post.title,
                     style: const TextStyle(
                       fontFamily: "BN",
-                      fontSize: 20,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  subtitle: Text(post.caption),
+                  subtitle: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.caption.length >= 20
+                            ? post.caption.substring(0, 20)
+                            : post.caption,
+                      ),
+                      Text(
+                        "Read more...",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

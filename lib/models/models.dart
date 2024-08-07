@@ -2,10 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MyUser {
   final String username, name, email, bio, uid, role;
-  final List<dynamic> followers;
-  final List<dynamic> following;
-  final List<dynamic> posts;
+  final List<DocumentReference> followers;
+  final List<DocumentReference> following;
+  final List<DocumentReference> posts;
   final String profilePicture;
+  final List<dynamic> notifications;
 
   MyUser({
     required this.username,
@@ -18,6 +19,7 @@ class MyUser {
     required this.followers,
     required this.following,
     required this.posts,
+    required this.notifications,
   });
 
   Map<String, dynamic> toJson() => {
@@ -30,10 +32,11 @@ class MyUser {
         "profilePicture": profilePicture,
         "followers": [],
         "following": [],
-        "posts": []
+        "posts": [],
+        "notifications": [],
       };
 
-  static MyUser fromJson(Map<String, dynamic> json) {
+  static MyUser fromJson(Map json) {
     return MyUser(
       username: json["username"],
       name: json["name"],
@@ -42,10 +45,31 @@ class MyUser {
       uid: json["uid"],
       role: json["role"],
       profilePicture: json["profilePicture"],
-      followers: json["followers"],
-      following: json["following"],
-      posts: json["posts"],
+      followers: List.from(json["followers"]),
+      following: List.from(json["following"]),
+      posts: List.from(json["posts"]),
+      notifications: json["notifications"],
     );
+  }
+
+  static List<MyUser> fromList(List list) {
+    return list.map(
+      (e) {
+        return MyUser(
+          username: e["username"],
+          name: e["name"],
+          email: e["email"],
+          bio: e["bio"],
+          uid: e["uid"],
+          role: e["role"],
+          profilePicture: e["profilePicture"],
+          followers: e["followers"],
+          following: e["following"],
+          posts: e["posts"],
+          notifications: e["notifications"],
+        );
+      },
+    ).toList();
   }
 
   static MyUser fromSnapshot(DocumentSnapshot snapshot) {
@@ -59,9 +83,101 @@ class MyUser {
       uid: snap["uid"],
       role: snap["role"],
       profilePicture: snap["profilePicture"],
-      followers: List<dynamic>.from(snap["followers"]),
-      following: List<dynamic>.from(snap["following"]),
-      posts: List<dynamic>.from(snap["posts"]),
+      followers: List.from(snap["followers"]),
+      following: List.from(snap["following"]),
+      posts: List.from(snap["posts"]),
+      notifications: List<dynamic>.from(snap["notifications"]),
+    );
+  }
+}
+
+class MyNotification {
+  final String uid;
+  final String notification;
+  final String timestamp;
+
+  MyNotification({
+    required this.uid,
+    required this.notification,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toJson() => {
+        "uid": uid,
+        "notification": notification,
+        "timestamp": timestamp,
+      };
+
+  static List<MyNotification> fromList(List<dynamic> list) {
+    return list.map((e) => MyNotification.fromMap(e)).toList();
+  }
+
+  static MyNotification fromMap(Map<String, dynamic> map) {
+    return MyNotification(
+      uid: map["uid"],
+      notification: map["notification"],
+      timestamp: map["timestamp"],
+    );
+  }
+
+  static MyNotification fromSnapshot(DocumentSnapshot snapshot) {
+    var snap = snapshot.data() as Map<String, dynamic>;
+
+    return MyNotification(
+      uid: snap["uid"],
+      notification: snap["notification"],
+      timestamp: snap["timestamp"],
+    );
+  }
+}
+
+class Comment {
+  final String text;
+  final DocumentReference author;
+  final String name;
+  final String username;
+  final String profilePicture;
+  final String commentUid;
+
+  Comment({
+    required this.text,
+    required this.author,
+    required this.name,
+    required this.username,
+    required this.profilePicture,
+    required this.commentUid,
+  });
+
+  Map<String, dynamic> toJson() => {
+        "text": text,
+        "author": author,
+        "name": name,
+        "username": username,
+        "profilePicture": profilePicture,
+        "commentUid": commentUid,
+      };
+
+  static Comment fromMap(Map<String, dynamic> map) {
+    return Comment(
+      text: map["text"],
+      author: map["author"],
+      name: map["name"],
+      username: map["username"],
+      profilePicture: map["profilePicture"],
+      commentUid: map["commentUid"],
+    );
+  }
+
+  static Comment fromSnapshot(DocumentSnapshot snapshot) {
+    var snap = snapshot.data() as Map<String, dynamic>;
+
+    return Comment(
+      text: snap["text"],
+      author: snap["author"],
+      name: snap["name"],
+      username: snap["username"],
+      profilePicture: snap["profilePicture"],
+      commentUid: snap["commentUid"],
     );
   }
 }
@@ -70,10 +186,10 @@ class Post {
   final String title;
   final String caption;
   final String img;
-  final String author;
+  final DocumentReference author;
   final String postUid;
-  final List<dynamic> likes;
-  final List<Comments> comments;
+  final List<DocumentReference> likes;
+  final List<Comment> comments;
 
   Post({
     required this.title,
@@ -95,6 +211,18 @@ class Post {
         "comments": comments,
       };
 
+  static Post fromMap(Map<String, dynamic> map) {
+    return Post(
+      title: map["title"],
+      caption: map["caption"],
+      img: map["img"],
+      author: map["author"],
+      postUid: map["postUid"],
+      likes: List.from(map["likes"]),
+      comments: List.from(map["comments"]),
+    );
+  }
+
   static Post fromSnapshot(DocumentSnapshot snapshot) {
     var snap = snapshot.data() as Map<String, dynamic>;
     return Post(
@@ -103,36 +231,30 @@ class Post {
       img: snap["img"],
       author: snap["author"],
       postUid: snap["postUid"],
-      likes: List<dynamic>.from(snap["likes"]),
-      comments: List<Comments>.from(snap["comments"]),
+      likes: List.from(snap["likes"]),
+      comments: List.from(snap["comments"]),
     );
   }
 }
 
-class Comments {
-  final String comment;
-  final String author;
-  final String commentUid;
+class PostAuthor {
+  final Post posts;
+  final MyUser user;
 
-  Comments({
-    required this.comment,
-    required this.author,
-    required this.commentUid,
+  PostAuthor({
+    required this.posts,
+    required this.user,
   });
 
   Map<String, dynamic> toJson() => {
-        "comment": comment,
-        "author": author,
-        "commentUid": commentUid,
+        "posts": posts,
+        "user": user,
       };
 
-  static Comments fromSnapshot(DocumentSnapshot snapshot) {
-    var snap = snapshot.data() as Map<String, dynamic>;
-
-    return Comments(
-      comment: snap['comment'],
-      author: snap['author'],
-      commentUid: snap['commentUid'],
+  static PostAuthor fromMap(Map<String, dynamic> map) {
+    return PostAuthor(
+      posts: Post.fromMap(map["posts"]),
+      user: MyUser.fromJson(map["user"]),
     );
   }
 }

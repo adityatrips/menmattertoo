@@ -42,7 +42,7 @@ if (flutterCompileSdkVersion == null) {
 }
 
 android {
-    namespace = "com.adityatripathi.men_matter_too"
+    namespace = "com.adityatripathi.menmattertoo"
     compileSdk = flutterCompileSdkVersion.toInteger()
     ndkVersion = flutter.ndkVersion
 
@@ -56,13 +56,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.adityatripathi.men_matter_too"
+        applicationId = "com.adityatripathi.menmattertoo"
         minSdkVersion = flutterMinSdkVersion.toInteger()
         targetSdk = flutter.targetSdkVersion
         // versionCode = flutterVersionCode.toInteger()
         // versionName = flutterVersionName
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 5
+        versionName = "1.1.1"
     }
 
     signingConfigs {

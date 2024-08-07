@@ -1,15 +1,15 @@
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:men_matter_too/models/models.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
+import 'package:men_matter_too/utils/loading_indicator.dart';
 import 'package:men_matter_too/utils/pick_image.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
+import 'package:provider/provider.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -29,42 +29,20 @@ class EditProfileState extends State<EditProfile> {
     setState(() {
       this.file = file;
     });
-    log(file.toString());
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: AuthMethods().getUserDetails(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(snapshot.error.toString()),
-          );
-        }
-        if (!snapshot.hasData) {
-          return const Center(
-            child: Text("No data found"),
-          );
-        }
-
-        final user = MyUser.fromJson(snapshot.data!.data()!);
-
-        bioController.text = user.bio.replaceAll("\\n", "\n");
-        nameController.text = user.name;
-        usernameController.text = user.username;
+    return Consumer<UserProvider>(
+      builder: (context, user, _) {
+        bioController.text = user.loggedUser!.bio.replaceAll("\\n", "\n");
+        nameController.text = user.loggedUser!.name;
+        usernameController.text = user.loggedUser!.username;
 
         return Scaffold(
           appBar: myAppBar(context),
           body: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
               child: ListView(
                 children: [
@@ -75,11 +53,11 @@ class EditProfileState extends State<EditProfile> {
                       borderRadius: BorderRadius.circular(50),
                       child: file == null
                           ? CachedNetworkImage(
-                              imageUrl: user.profilePicture,
+                              imageUrl: user.loggedUser!.profilePicture,
                               placeholder: (context, url) =>
-                                  const CircularProgressIndicator(),
+                                  const LoadingIndicator(),
                               errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
+                                  const Icon(Icons.error_rounded),
                               useOldImageOnUrlChange: true,
                             )
                           : Image.memory(file!),
@@ -127,11 +105,11 @@ class EditProfileState extends State<EditProfile> {
                         context: context,
                         builder: (context) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: LoadingIndicator(),
                           );
                         },
                       );
-                      await AuthMethods().updateProfile(
+                      await user.updateProfile(
                         bio: bioController.text,
                         name: nameController.text,
                         username: usernameController.text,

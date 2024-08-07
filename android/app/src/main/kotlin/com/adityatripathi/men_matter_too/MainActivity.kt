@@ -1,4 +1,4 @@
-package com.adityatripathi.men_matter_too
+package com.adityatripathi.menmattertoo
 
 import io.flutter.embedding.android.FlutterActivity
 

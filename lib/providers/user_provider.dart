@@ -1,27 +1,507 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/models/models.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
+import 'package:men_matter_too/utils/show_snackbar.dart';
+import 'package:uuid/uuid.dart';
 
 class UserProvider with ChangeNotifier {
-  // ignore: unused_field
   MyUser? _user;
-
-  Future<String> getAndSetUser(String uid) async {
-    DocumentSnapshot<Map<String, dynamic>> documentSnapshot;
-
-    documentSnapshot = await AuthMethods().getUserDetailsF(uid);
-
-    if (documentSnapshot.exists) {
-      _user = MyUser.fromSnapshot(documentSnapshot);
-      return 'success';
-    }
-
-    return 'error';
-  }
-
-  void setUser(MyUser? user) {
+  get getUser => _user;
+  set setUser(MyUser user) {
     _user = user;
     notifyListeners();
+  }
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  List<Post>? posts;
+  List<MyUser>? allUsers;
+  MyUser? loggedUser;
+  List<MyNotification>? allNotifications;
+  MyUser? userFoundByUid;
+  Post? postFoundById;
+
+  Future getUserByUid(String uid) async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection(
+            "users",
+          )
+          .doc(uid)
+          .get();
+
+      if (!snapshot.exists) {
+        userFoundByUid = null;
+      }
+
+      userFoundByUid = MyUser.fromSnapshot(snapshot);
+
+      notifyListeners();
+    } catch (e) {
+      return Builder(
+        builder: (context) {
+          return SnackBar(
+            content: Text(e.toString()),
+          );
+        },
+      );
+    }
+  }
+
+  Future getPostByUid(String uid) async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection(
+            "posts",
+          )
+          .doc(uid)
+          .get();
+
+      if (!snapshot.exists) {
+        userFoundByUid = null;
+      }
+
+      postFoundById = Post.fromSnapshot(snapshot);
+
+      notifyListeners();
+    } catch (e) {
+      return Builder(
+        builder: (context) {
+          return SnackBar(
+            content: Text(e.toString()),
+          );
+        },
+      );
+    }
+  }
+
+  Future getAllPosts() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection(
+          "posts",
+        )
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      posts = [];
+    }
+
+    posts = snapshot.docs.map((e) => Post.fromSnapshot(e)).toList();
+
+    notifyListeners();
+  }
+
+  Future getAllUsers() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection(
+          "users",
+        )
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      allUsers = [];
+    }
+
+    allUsers = snapshot.docs.map((e) => MyUser.fromSnapshot(e)).toList();
+
+    notifyListeners();
+  }
+
+  Future getLoggedInUser() async {
+    DocumentSnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection(
+          "users",
+        )
+        .doc(_auth.currentUser!.uid)
+        .get();
+
+    if (!snapshot.exists) {
+      loggedUser = null;
+    }
+
+    loggedUser = MyUser.fromSnapshot(snapshot);
+
+    notifyListeners();
+  }
+
+  Future getAllNotifications() async {
+    await getLoggedInUser();
+
+    if (loggedUser == null) {
+      allNotifications = [];
+    }
+
+    allNotifications = loggedUser!.notifications
+        .map((e) {
+          return MyNotification.fromMap(e);
+        })
+        .toList()
+        .reversed
+        .toList();
+
+    notifyListeners();
+  }
+
+  Future uploadAndAddPost({
+    required String title,
+    required String caption,
+    required Uint8List file,
+  }) async {
+    final docRef = _firestore.collection('posts').doc();
+    final userRef = _firestore.collection('users').doc(_auth.currentUser!.uid);
+
+    await userRef.update({
+      'posts': FieldValue.arrayUnion([docRef]),
+    });
+
+    final storageRef = _storage.ref().child(
+          'posts/${_auth.currentUser!.uid}/${docRef.id}',
+        );
+
+    final uploadTask = await storageRef.putData(
+      file,
+      SettableMetadata(
+        contentType: "image/webp",
+      ),
+    );
+    final url = await uploadTask.ref.getDownloadURL();
+
+    await docRef.set(
+      {
+        'title': title,
+        'caption': caption,
+        'img': url,
+        'author': userRef,
+        'likes': [],
+        'comments': [],
+        'postUid': docRef.id,
+      },
+    );
+    await addNotifications(
+      uid: _auth.currentUser!.uid,
+      notification: "You uploaded a post",
+    );
+
+    showSnackbar(
+      "Post uploaded successfully",
+      type: TypeOfSnackbar.success,
+    );
+
+    notifyListeners();
+  }
+
+  Future addNotifications({
+    required String uid,
+    required String notification,
+  }) async {
+    DocumentReference userRef = _firestore.collection('users').doc(uid);
+
+    await userRef.update(
+      {
+        "notifications": FieldValue.arrayUnion(
+          [
+            {
+              "uid": const Uuid().v4(),
+              "notification": notification,
+              "timestamp": DateTime.now().toString(),
+            }
+          ],
+        )
+      },
+    );
+  }
+
+  Future updateProfile({
+    required String name,
+    required String username,
+    required String bio,
+    Uint8List? file,
+  }) async {
+    try {
+      User currentUser = _auth.currentUser!;
+      final ref = _firestore.collection('users').doc(currentUser.uid);
+
+      if (file != null) {
+        final storageRef = _storage
+            .ref()
+            .child('profile_pictures')
+            .child(_auth.currentUser!.uid);
+
+        final uploadTask = await storageRef.putData(file);
+
+        final url = await uploadTask.ref.getDownloadURL();
+        ref.update({
+          'name': name,
+          'username': username,
+          'bio': bio,
+          'profilePicture': url,
+        });
+        await _auth.currentUser!.updatePhotoURL(url);
+      } else {
+        ref.update({
+          'name': name,
+          'username': username,
+          'bio': bio,
+        });
+      }
+
+      await addNotifications(
+        uid: _auth.currentUser!.uid,
+        notification: "You updated your profile",
+      );
+
+      notifyListeners();
+    } catch (e) {}
+  }
+
+  Future loginUser({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      addNotifications(
+        uid: _auth.currentUser!.uid,
+        notification: "You signed in using email and password",
+      );
+
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      showSnackbar(
+        e.message.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future signupUser({
+    required String bio,
+    required String email,
+    required String name,
+    required String password,
+    required String role,
+    required String username,
+  }) async {
+    try {
+      final UserCredential userCred =
+          await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      MyUser user = MyUser(
+        username: username,
+        name: name,
+        email: email,
+        bio: bio,
+        uid: userCred.user!.uid,
+        role: role,
+        followers: [],
+        following: [],
+        posts: [],
+        notifications: [],
+        profilePicture:
+            "https://firebasestorage.googleapis.com/v0/b/men-matter-too-2412.appspot.com/o/default_pfp.webp?alt=media&token=b311f01b-a2e9-40c5-9f29-00e2eafcf212",
+      );
+
+      await _firestore
+          .collection(
+            "users",
+          )
+          .doc(
+            userCred.user!.uid,
+          )
+          .set(
+            user.toJson(),
+          );
+
+      notifyListeners();
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future logoutUser() async {
+    try {
+      _user = null;
+      allNotifications = [];
+      allUsers = [];
+      loggedUser = null;
+      posts = [];
+      userFoundByUid = null;
+
+      await _auth.signOut();
+    } on FirebaseAuthException catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    } catch (e) {
+      showSnackbar("$e", type: TypeOfSnackbar.error);
+    }
+  }
+
+  Future resetPassword(String email) async {
+    try {
+      if (email.isEmpty) {
+        throw Exception("Email address can not be empty");
+      }
+
+      await _auth.sendPasswordResetEmail(email: email);
+    } on Exception catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future markNotificationAsRead(String uuid) async {
+    try {
+      final userRef =
+          _firestore.collection('users').doc(_auth.currentUser!.uid);
+      allNotifications!.removeWhere((element) => element.uid == uuid);
+
+      await userRef.update({
+        "notifications": allNotifications!.map((e) => e.toJson()).toList(),
+      });
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future likeOrUnlikeAPost(String postId, String uid) async {
+    try {
+      final postRef = _firestore.collection('posts').doc(postId);
+      final userRef = _firestore.collection('users').doc(uid);
+
+      final post = await postRef.get();
+      final user = await userRef.get();
+
+      if (post.data()!['likes'].contains(userRef)) {
+        await postRef.update({
+          'likes': FieldValue.arrayRemove([userRef]),
+        });
+      } else {
+        await postRef.update({
+          'likes': FieldValue.arrayUnion([userRef]),
+        });
+      }
+
+      notifyListeners();
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future<bool> isPostLiked(String postId, String uid) async {
+    try {
+      final postRef = await _firestore.collection('posts').doc(postId).get();
+      final userRef = await _firestore.collection('users').doc(uid).get();
+
+      return postRef.data()!['likes'].contains(userRef);
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+      return false;
+    }
+  }
+
+  Future addCommentToPost(
+    String postId,
+    String text,
+    String uid,
+  ) async {
+    try {
+      final postRef = _firestore.collection('posts').doc(postId);
+      final userRef = _firestore.collection('users').doc(uid);
+
+      final post = Post.fromSnapshot(await postRef.get());
+      final user = MyUser.fromSnapshot(await userRef.get());
+
+      await postRef.update({
+        'comments': FieldValue.arrayUnion([
+          {
+            'text': text,
+            'author': userRef,
+            "name": user.name,
+            "username": user.username,
+            "profilePicture": user.profilePicture,
+            'commentUid': const Uuid().v4(),
+          }
+        ]),
+      });
+
+      notifyListeners();
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
+  }
+
+  Future followOrUnfollowUser(String selfUid, String otherUid) async {
+    try {
+      if (selfUid == otherUid) {
+        throw Exception("You can't follow yourself");
+      }
+
+      final selfRef = _firestore.collection('users').doc(selfUid);
+      final otherRef = _firestore.collection('users').doc(otherUid);
+
+      final self = MyUser.fromSnapshot(await selfRef.get());
+
+      if (self.following.contains(otherRef)) {
+        await selfRef.update({
+          'following': FieldValue.arrayRemove([otherRef]),
+        });
+
+        await otherRef.update({
+          'followers': FieldValue.arrayRemove([selfRef]),
+        });
+      } else {
+        await selfRef.update({
+          'following': FieldValue.arrayUnion([otherRef]),
+        });
+
+        await otherRef.update({
+          'followers': FieldValue.arrayUnion([selfRef]),
+        });
+      }
+
+      notifyListeners();
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
   }
 }

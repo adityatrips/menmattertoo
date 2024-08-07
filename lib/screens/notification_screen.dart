@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/widgets/custom_button.dart';
+import 'package:provider/provider.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -9,65 +10,92 @@ class NotificationScreen extends StatefulWidget {
   NotificationScreenState createState() => NotificationScreenState();
 }
 
-class NotificationScreenState extends State<NotificationScreen> {
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
+class NotificationScreenState extends State<NotificationScreen>
+    with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-        ),
-        child: Center(
-          child: _notificationList(),
-        ),
+      body: Consumer<UserProvider>(
+        builder: (context, user, _) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              user.getAllNotifications();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _notificationList(user),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _notificationList() {
-    return FutureBuilder(
-        future: FirebaseFirestore.instance
-            .doc("users/${FirebaseAuth.instance.currentUser!.uid}")
-            .get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+  Widget _notificationList(UserProvider user) {
+    if (user.allNotifications == null) {
+      user.getAllNotifications();
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
-          final data = snapshot.data as DocumentSnapshot;
-          final notifications = data.get('notifications') as List<dynamic>;
+    if (user.allNotifications!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              "Yay! You're all caught up!",
+              style: TextStyle(
+                fontFamily: "BN",
+                fontSize: 20,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            CustomButton(
+              buttonText: "Refresh",
+              onTap: () => user.getAllNotifications(),
+            ),
+          ],
+        ),
+      );
+    }
 
-          return ListView.builder(
-            reverse: true,
-            shrinkWrap: true,
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
-              return _notificationCard(
-                snapshot.data!['notifications'][index]['notification'],
-                snapshot.data!['notifications'][index]['timestamp'],
-              );
-            },
-          );
-        });
+    return ListView.builder(
+      itemCount: user.allNotifications!.length,
+      itemBuilder: (context, index) {
+        return _notificationCard(
+          user,
+          user.allNotifications![index].notification,
+          user.allNotifications![index].timestamp,
+          user.allNotifications![index].uid,
+        );
+      },
+    );
   }
 
   Widget _notificationCard(
+    UserProvider user,
     String title,
     String timestamp,
+    String uuid,
   ) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text(timestamp),
-        trailing: const Icon(Icons.notifications_rounded),
-      ),
-    );
+    return Builder(builder: (context) {
+      return Card(
+        color: Theme.of(context).colorScheme.tertiary,
+        child: ListTile(
+          title: Text(title),
+          subtitle: Text(timestamp),
+          trailing: IconButton(
+            onPressed: () {
+              user.markNotificationAsRead(uuid);
+              user.getAllNotifications();
+            },
+            icon: const Icon(Icons.delete_forever_rounded),
+          ),
+        ),
+      );
+    });
   }
 }

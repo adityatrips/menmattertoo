@@ -2,9 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/models/models.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/screens/profile_page.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
+import 'package:men_matter_too/utils/loading_indicator.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
+import 'package:provider/provider.dart';
 
 class FollowersPage extends StatefulWidget {
   final MyUser? user;
@@ -18,52 +21,31 @@ class FollowersPage extends StatefulWidget {
 class FollowersPageState extends State<FollowersPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: myAppBar(context),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: _profileCard(user: widget.user!),
-      ),
+    return Consumer<UserProvider>(
+      builder: (context, user, _) {
+        return Scaffold(
+          appBar: myAppBar(context),
+          body: Padding(
+            padding: const EdgeInsets.all(20),
+            child: _profileCard(user: widget.user ?? user.loggedUser!),
+          ),
+        );
+      },
     );
   }
 
   Widget _profileCard({required MyUser user}) {
-    return FutureBuilder(
-      future: FirebaseFirestore.instance.doc('users/${user.uid}').get(
-            const GetOptions(source: Source.serverAndCache),
-          ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        if (snapshot.hasError) {
-          return const Center(
-            child: Text("An error occurred. Please try again later."),
-          );
-        }
-        if (!snapshot.hasData) {
-          return const Center(
-            child: Text("No users found."),
-          );
-        }
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const AlwaysScrollableScrollPhysics(),
+      separatorBuilder: (context, index) => const SizedBox(
+        height: 10,
+      ),
+      itemCount: user.followers.length,
+      itemBuilder: (context, index) {
+        String oneUser = user.followers[index].id;
 
-        final followers = MyUser.fromSnapshot(snapshot.data!).followers;
-
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          separatorBuilder: (context, index) => const SizedBox(
-            height: 10,
-          ),
-          itemCount: followers.length,
-          itemBuilder: (context, index) {
-            String oneUser = followers[index];
-
-            return _oneUserCard(oneUser, user);
-          },
-        );
+        return _oneUserCard(oneUser, user);
       },
     );
   }
@@ -73,9 +55,7 @@ class FollowersPageState extends State<FollowersPage> {
       future: FirebaseFirestore.instance.doc("users/$oneUser").get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const LoadingIndicator();
         }
 
         if (snapshot.hasError) {
@@ -125,7 +105,7 @@ class FollowersPageState extends State<FollowersPage> {
                 ).createRoute(),
               );
             },
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right_rounded),
           ),
         );
       },

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:men_matter_too/resources/auth_methods.dart';
-import 'package:men_matter_too/utils/show_snackbar.dart';
+import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/utils/loading_indicator.dart';
+import 'package:provider/provider.dart';
 
 PreferredSizeWidget myAppBar(BuildContext context) {
   return AppBar(
@@ -11,27 +12,19 @@ PreferredSizeWidget myAppBar(BuildContext context) {
       color: Theme.of(context).colorScheme.primary,
       height: 40,
       placeholderBuilder: (context) {
-        return Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        return const LoadingIndicator();
       },
     ),
     actions: [
-      IconButton(
-        icon: Icon(
-          Icons.logout_rounded,
-          color: Colors.blue.shade700,
-        ),
-        onPressed: () async {
-          String logout = await AuthMethods().logout(context);
-          if (logout == "success") {
-            showSnackbar(context, "Logout successful");
-            return;
-          }
-          showSnackbar(context, logout, type: TypeOfSnackbar.error);
-          return;
+      Consumer<UserProvider>(
+        builder: (context, user, _) {
+          return IconButton(
+            icon: Icon(
+              Icons.logout_rounded,
+              color: Colors.blue.shade700,
+            ),
+            onPressed: () => user.logoutUser(),
+          );
         },
       )
     ],

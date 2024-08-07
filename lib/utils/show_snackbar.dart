@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 enum TypeOfSnackbar { success, error, warning }
 
-void showSnackbar(BuildContext context, String text,
-    {TypeOfSnackbar type = TypeOfSnackbar.success}) {
+void showSnackbar(String text, {TypeOfSnackbar type = TypeOfSnackbar.success}) {
   Color? backgroundColor;
   Color? foregroundColor;
 
@@ -22,14 +22,34 @@ void showSnackbar(BuildContext context, String text,
       break;
   }
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      duration: const Duration(milliseconds: 750),
-      content: Text(
-        text,
-        style: TextStyle(color: foregroundColor),
-      ),
-      backgroundColor: backgroundColor,
+  Get.showSnackbar(GetSnackBar(
+    duration: const Duration(seconds: 2),
+    snackPosition: SnackPosition.BOTTOM,
+    animationDuration: const Duration(milliseconds: 500),
+    forwardAnimationCurve: Curves.fastEaseInToSlowEaseOut,
+    reverseAnimationCurve: Curves.fastEaseInToSlowEaseOut,
+    barBlur: 100,
+    icon: Icon(
+      type == TypeOfSnackbar.success
+          ? Icons.check_circle_rounded
+          : type == TypeOfSnackbar.warning
+              ? Icons.warning_rounded
+              : Icons.error_rounded,
+      color: foregroundColor,
     ),
-  );
+    backgroundColor: backgroundColor,
+    titleText: Text(
+      type.toString().split('.').last.toUpperCase(),
+      style: TextStyle(
+        color: foregroundColor,
+        fontWeight: FontWeight.bold,
+        fontFamily: "BN",
+        fontSize: 20,
+      ),
+    ),
+    messageText: Text(
+      text,
+      style: TextStyle(color: foregroundColor),
+    ),
+  ));
 }
