@@ -67,8 +67,6 @@ class OnePostPageState extends State<OnePostPage> {
                         },
                       ),
                       Text("${post.likes.length}"),
-                      const SizedBox(width: 10),
-                      Text("${post.comments.length}"),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(
