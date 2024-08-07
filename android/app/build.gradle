@@ -42,7 +42,7 @@ if (flutterCompileSdkVersion == null) {
 }
 
 android {
-    namespace = "com.adityatripathi.menmattertoo"
+    namespace = "com.adityatripathi.men_matter_too"
     compileSdk = flutterCompileSdkVersion.toInteger()
     ndkVersion = flutter.ndkVersion
 
@@ -56,7 +56,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.adityatripathi.menmattertoo"
+        applicationId = "com.adityatripathi.men_matter_too"
         minSdkVersion = flutterMinSdkVersion.toInteger()
         targetSdk = flutter.targetSdkVersion
         // versionCode = flutterVersionCode.toInteger()
