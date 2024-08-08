@@ -71,26 +71,28 @@ class OnePostPageState extends State<OnePostPage> {
                       ),
                       Text("${post.likes.length}"),
                       const Spacer(),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.mode_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            AnimatedRoute(
-                              context: context,
-                              page: EditPostPage(
-                                uid: post.postUid,
-                                title: post.title,
-                                caption: post.caption,
-                                file: post.img,
+                      user.loggedUser!.uid == post.author.id
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.mode_rounded,
+                                color: Colors.white,
                               ),
-                            ).createRoute(),
-                          );
-                        },
-                      ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  AnimatedRoute(
+                                    context: context,
+                                    page: EditPostPage(
+                                      uid: post.postUid,
+                                      title: post.title,
+                                      caption: post.caption,
+                                      file: post.img,
+                                    ),
+                                  ).createRoute(),
+                                );
+                              },
+                            )
+                          : const SizedBox(),
                       IconButton(
                         icon: const Icon(
                           Icons.save_alt_rounded,

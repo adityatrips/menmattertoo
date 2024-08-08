@@ -121,12 +121,13 @@ class UserProvider with ChangeNotifier {
         .doc(_auth.currentUser!.uid)
         .get();
 
-    if (!snapshot.exists) {
+    if (!snapshot.exists || snapshot.data() == null) {
       loggedUser = null;
+      notifyListeners();
+      return;
     }
 
-    loggedUser = MyUser.fromSnapshot(snapshot);
-
+    loggedUser = MyUser.fromJson(snapshot.data()!);
     notifyListeners();
   }
 
@@ -336,7 +337,6 @@ class UserProvider with ChangeNotifier {
       );
 
       getLoggedInUser();
-
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       showSnackbar(
@@ -360,38 +360,50 @@ class UserProvider with ChangeNotifier {
     required String username,
   }) async {
     try {
-      final UserCredential userCred =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
+      QuerySnapshot<Map<String, dynamic>> usernameSnapshot = await _firestore
+          .collection("users")
+          .where("username", isEqualTo: username)
+          .get();
+
+      if (usernameSnapshot.docs.isNotEmpty) {
+        throw "Username already exists";
+      } else {
+        final UserCredential userCred =
+            await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        MyUser user = MyUser(
+          username: username,
+          name: name,
+          email: email,
+          bio: bio,
+          uid: userCred.user!.uid,
+          role: role,
+          followers: [],
+          following: [],
+          posts: [],
+          notifications: [],
+          profilePicture:
+              "https://firebasestorage.googleapis.com/v0/b/men-matter-too-2412.appspot.com/o/default_pfp.webp?alt=media&token=b311f01b-a2e9-40c5-9f29-00e2eafcf212",
+        );
+        await _firestore
+            .collection(
+              "users",
+            )
+            .doc(
+              userCred.user!.uid,
+            )
+            .set(
+              user.toJson(),
+            );
+      }
+
+      showSnackbar(
+        "User created successfully",
+        type: TypeOfSnackbar.success,
       );
-
-      MyUser user = MyUser(
-        username: username,
-        name: name,
-        email: email,
-        bio: bio,
-        uid: userCred.user!.uid,
-        role: role,
-        followers: [],
-        following: [],
-        posts: [],
-        notifications: [],
-        profilePicture:
-            "https://firebasestorage.googleapis.com/v0/b/men-matter-too-2412.appspot.com/o/default_pfp.webp?alt=media&token=b311f01b-a2e9-40c5-9f29-00e2eafcf212",
-      );
-
-      await _firestore
-          .collection(
-            "users",
-          )
-          .doc(
-            userCred.user!.uid,
-          )
-          .set(
-            user.toJson(),
-          );
-
       notifyListeners();
     } catch (e) {
       showSnackbar(

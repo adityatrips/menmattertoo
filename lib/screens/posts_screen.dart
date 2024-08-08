@@ -39,6 +39,11 @@ class PostsScreenState extends State<PostsScreen> {
       listen: false,
     ).getLoggedInUser();
 
+    Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).getAllPosts();
+
     super.initState();
   }
 
@@ -78,9 +83,7 @@ class PostsScreenState extends State<PostsScreen> {
           } else {
             return Scaffold(
               body: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
-                  top: 20,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ListView.builder(
                   shrinkWrap: true,
                   physics: const AlwaysScrollableScrollPhysics(),

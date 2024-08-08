@@ -29,9 +29,7 @@ class SearchPageState extends State<SearchPage> {
                 .getAllUsers();
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
-              top: 20,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: _allProfiles(user),
           ),
         );

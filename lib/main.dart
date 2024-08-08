@@ -88,6 +88,8 @@ class _MyAppState extends State<MyApp> {
                 return const LoginScreen();
               }
 
+              Provider.of<UserProvider>(context, listen: false)
+                  .getLoggedInUser();
               return const HomeScreen();
             },
           ),

@@ -135,14 +135,22 @@ class LoignScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 10),
                     CustomButton(
-                      onTap: () => user.signupUser(
-                        bio: bioController.text,
-                        email: emailController.text,
-                        password: passwordController.text,
-                        name: nameController.text,
-                        username: usernameController.text,
-                        role: 'USER',
-                      ),
+                      onTap: () {
+                        user.signupUser(
+                          bio: bioController.text,
+                          email: emailController.text,
+                          password: passwordController.text,
+                          name: nameController.text,
+                          username: usernameController.text,
+                          role: 'USER',
+                        );
+                        bioController.clear();
+                        emailController.clear();
+                        nameController.clear();
+                        passwordController.clear();
+                        confirmPasswordController.clear();
+                        usernameController.clear();
+                      },
                       buttonText: "Signup",
                     ),
                     const SizedBox(height: 10),

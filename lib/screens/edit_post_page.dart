@@ -52,9 +52,7 @@ class EditPostPageState extends State<EditPostPage> {
     return Scaffold(
       appBar: myAppBar(context),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
-          top: 20,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Center(
           child: Consumer<UserProvider>(
             builder: (context, user, _) {
