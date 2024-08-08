@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:men_matter_too/models/models.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
+import 'package:men_matter_too/screens/edit_post_page.dart';
+import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 
 class OnePostPage extends StatefulWidget {
-  final Post post;
+  final String post;
 
   const OnePostPage({
     super.key,
@@ -29,8 +31,9 @@ class OnePostPageState extends State<OnePostPage> {
       appBar: myAppBar(context),
       body: Consumer<UserProvider>(
         builder: (context, user, _) {
-          if (user.postFoundById == null) {
-            user.getPostByUid(widget.post.postUid);
+          if (user.postFoundById == null ||
+              user.postFoundById!.postUid != widget.post) {
+            user.getPostByUid(widget.post);
             return const Center(
               child: CircularProgressIndicator(),
             );
@@ -63,11 +66,31 @@ class OnePostPageState extends State<OnePostPage> {
                             post.postUid,
                             user.loggedUser!.uid,
                           );
-                          user.getPostByUid(widget.post.postUid);
+                          user.getPostByUid(widget.post);
                         },
                       ),
                       Text("${post.likes.length}"),
                       const Spacer(),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.mode_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            AnimatedRoute(
+                              context: context,
+                              page: EditPostPage(
+                                uid: post.postUid,
+                                title: post.title,
+                                caption: post.caption,
+                                file: post.img,
+                              ),
+                            ).createRoute(),
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.save_alt_rounded,
@@ -108,16 +131,39 @@ class OnePostPageState extends State<OnePostPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      post.title,
-                      style: const TextStyle(
-                        fontFamily: "BN",
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                  Text(
+                    post.title,
+                    style: const TextStyle(
+                      fontFamily: "BN",
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  FutureBuilder(
+                    future: post.author.get(),
+                    builder: (builder, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(snapshot.error.toString()),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data == null) {
+                        return const Text("Author not found");
+                      }
+
+                      return Text(
+                        "${snapshot.data!['name']} wrote this.",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Text(post.caption),

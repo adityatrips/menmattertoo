@@ -183,6 +183,9 @@ class UserProvider with ChangeNotifier {
         'postUid': docRef.id,
       },
     );
+
+    getPostByUid(docRef.id);
+
     await addNotifications(
       uid: _auth.currentUser!.uid,
       notification: "You uploaded a post",
@@ -194,6 +197,59 @@ class UserProvider with ChangeNotifier {
     );
 
     notifyListeners();
+  }
+
+  Future editPost({
+    required String uid,
+    required String title,
+    required String caption,
+    required Uint8List? file,
+    required String? url,
+  }) async {
+    try {
+      final postRef =
+          _firestore.collection('posts').doc(postFoundById!.postUid);
+
+      if (file != null) {
+        final storageRef = _storage
+            .ref()
+            .child('posts/${_auth.currentUser!.uid}/${postFoundById!.postUid}');
+
+        final uploadTask = await storageRef.putData(
+          file,
+          SettableMetadata(
+            contentType: "image/webp",
+          ),
+        );
+
+        final url = await uploadTask.ref.getDownloadURL();
+        postRef.update({
+          'title': title,
+          'caption': caption,
+          'img': url,
+        });
+      } else {
+        postRef.update({
+          'title': title,
+          'caption': caption,
+          'img': url,
+        });
+      }
+
+      await addNotifications(
+        uid: _auth.currentUser!.uid,
+        notification: "You updated a post",
+      );
+
+      getPostByUid(uid);
+      getAllPosts();
+      notifyListeners();
+    } catch (e) {
+      showSnackbar(
+        e.toString(),
+        type: TypeOfSnackbar.error,
+      );
+    }
   }
 
   Future addNotifications({
@@ -209,12 +265,14 @@ class UserProvider with ChangeNotifier {
             {
               "uid": const Uuid().v4(),
               "notification": notification,
-              "timestamp": DateTime.now().toString(),
+              "timestamp": DateTime.now().microsecondsSinceEpoch,
             }
           ],
         )
       },
     );
+
+    getAllNotifications();
   }
 
   Future updateProfile({
@@ -256,6 +314,8 @@ class UserProvider with ChangeNotifier {
         notification: "You updated your profile",
       );
 
+      getLoggedInUser();
+
       notifyListeners();
     } catch (e) {}
   }
@@ -274,6 +334,8 @@ class UserProvider with ChangeNotifier {
         uid: _auth.currentUser!.uid,
         notification: "You signed in using email and password",
       );
+
+      getLoggedInUser();
 
       notifyListeners();
     } on FirebaseAuthException catch (e) {
@@ -383,6 +445,8 @@ class UserProvider with ChangeNotifier {
       await userRef.update({
         "notifications": allNotifications!.map((e) => e.toJson()).toList(),
       });
+
+      getAllNotifications();
     } catch (e) {
       showSnackbar(
         e.toString(),
@@ -400,71 +464,25 @@ class UserProvider with ChangeNotifier {
       final user = await userRef.get();
 
       if (post.data()!['likes'].contains(userRef)) {
+        addNotifications(uid: uid, notification: "You unliked a post.");
         await postRef.update({
           'likes': FieldValue.arrayRemove([userRef]),
         });
       } else {
+        addNotifications(uid: uid, notification: "You liked a post.");
         await postRef.update({
           'likes': FieldValue.arrayUnion([userRef]),
         });
       }
-
-      notifyListeners();
     } catch (e) {
       showSnackbar(
         e.toString(),
         type: TypeOfSnackbar.error,
       );
     }
-  }
-
-  Future<bool> isPostLiked(String postId, String uid) async {
-    try {
-      final postRef = await _firestore.collection('posts').doc(postId).get();
-      final userRef = await _firestore.collection('users').doc(uid).get();
-
-      return postRef.data()!['likes'].contains(userRef);
-    } catch (e) {
-      showSnackbar(
-        e.toString(),
-        type: TypeOfSnackbar.error,
-      );
-      return false;
-    }
-  }
-
-  Future addCommentToPost(
-    String postId,
-    String text,
-    String uid,
-  ) async {
-    try {
-      final postRef = _firestore.collection('posts').doc(postId);
-      final userRef = _firestore.collection('users').doc(uid);
-
-      final post = Post.fromSnapshot(await postRef.get());
-      final user = MyUser.fromSnapshot(await userRef.get());
-
-      await postRef.update({
-        'comments': FieldValue.arrayUnion([
-          {
-            'text': text,
-            'author': userRef,
-            "name": user.name,
-            "username": user.username,
-            "profilePicture": user.profilePicture,
-            'commentUid': const Uuid().v4(),
-          }
-        ]),
-      });
-
-      notifyListeners();
-    } catch (e) {
-      showSnackbar(
-        e.toString(),
-        type: TypeOfSnackbar.error,
-      );
-    }
+    getPostByUid(postId);
+    getUserByUid(uid);
+    notifyListeners();
   }
 
   Future followOrUnfollowUser(String selfUid, String otherUid) async {
@@ -477,8 +495,17 @@ class UserProvider with ChangeNotifier {
       final otherRef = _firestore.collection('users').doc(otherUid);
 
       final self = MyUser.fromSnapshot(await selfRef.get());
+      final other = MyUser.fromSnapshot(await otherRef.get());
 
       if (self.following.contains(otherRef)) {
+        addNotifications(
+          uid: selfUid,
+          notification: "You unfollowed ${other.name}",
+        );
+        addNotifications(
+          uid: otherUid,
+          notification: "${self.name} unfollowed you.",
+        );
         await selfRef.update({
           'following': FieldValue.arrayRemove([otherRef]),
         });
@@ -487,6 +514,14 @@ class UserProvider with ChangeNotifier {
           'followers': FieldValue.arrayRemove([selfRef]),
         });
       } else {
+        addNotifications(
+          uid: selfUid,
+          notification: "You followed ${other.name}",
+        );
+        addNotifications(
+          uid: otherUid,
+          notification: "${self.name} followed you.",
+        );
         await selfRef.update({
           'following': FieldValue.arrayUnion([otherRef]),
         });
@@ -495,6 +530,9 @@ class UserProvider with ChangeNotifier {
           'followers': FieldValue.arrayUnion([selfRef]),
         });
       }
+
+      getUserByUid(selfUid);
+      getUserByUid(otherUid);
 
       notifyListeners();
     } catch (e) {

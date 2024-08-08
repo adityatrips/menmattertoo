@@ -94,7 +94,7 @@ class MyUser {
 class MyNotification {
   final String uid;
   final String notification;
-  final String timestamp;
+  final int timestamp;
 
   MyNotification({
     required this.uid,

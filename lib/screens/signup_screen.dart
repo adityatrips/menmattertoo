@@ -24,6 +24,8 @@ class LoignScreenState extends State<SignupScreen> {
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
 
+  bool obscureText = true;
+
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -92,6 +94,12 @@ class LoignScreenState extends State<SignupScreen> {
                           ),
                           const SizedBox(height: 10),
                           TextFieldInput(
+                            isPassword: obscureText,
+                            toggleViewPassword: () {
+                              setState(() {
+                                obscureText = !obscureText;
+                              });
+                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return "Please enter a password";
@@ -106,6 +114,12 @@ class LoignScreenState extends State<SignupScreen> {
                           ),
                           const SizedBox(height: 10),
                           TextFieldInput(
+                            isPassword: obscureText,
+                            toggleViewPassword: () {
+                              setState(() {
+                                obscureText = !obscureText;
+                              });
+                            },
                             validator: (value) {
                               if (value != passwordController.text) {
                                 return "Both passwords do not match";

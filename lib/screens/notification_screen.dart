@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,10 @@ class NotificationScreenState extends State<NotificationScreen>
     return Scaffold(
       body: Consumer<UserProvider>(
         builder: (context, user, _) {
+          if (user.allNotifications == null || user.allNotifications!.isEmpty) {
+            user.getAllNotifications();
+          }
+
           return RefreshIndicator(
             onRefresh: () async {
               user.getAllNotifications();
@@ -78,7 +83,7 @@ class NotificationScreenState extends State<NotificationScreen>
   Widget _notificationCard(
     UserProvider user,
     String title,
-    String timestamp,
+    int timestamp,
     String uuid,
   ) {
     return Builder(builder: (context) {
@@ -86,7 +91,13 @@ class NotificationScreenState extends State<NotificationScreen>
         color: Theme.of(context).colorScheme.tertiary,
         child: ListTile(
           title: Text(title),
-          subtitle: Text(timestamp),
+          subtitle: Text(
+            DateFormat.yMMMd().add_Hm().format(
+                  DateTime.fromMicrosecondsSinceEpoch(
+                    timestamp,
+                  ),
+                ),
+          ),
           trailing: IconButton(
             onPressed: () {
               user.markNotificationAsRead(uuid);

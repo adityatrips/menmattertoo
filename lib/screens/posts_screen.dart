@@ -86,7 +86,7 @@ class PostsScreenState extends State<PostsScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: user.posts!.length,
                   itemBuilder: (context, index) {
-                    return _postsCard(user.posts![index], user);
+                    return _postsCard(user.posts![index]);
                   },
                 ),
               ),
@@ -97,104 +97,93 @@ class PostsScreenState extends State<PostsScreen> {
     );
   }
 
-  Widget _postsCard(Post post, UserProvider user) {
-    return FutureBuilder(
-      future: post.author.get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
-        }
+  Widget _postsCard(Post post) {
+    return Consumer<UserProvider>(builder: (context, providedUser, _) {
+      MyUser user = providedUser.allUsers!.firstWhere(
+        (element) => element.uid == post.author.id,
+      );
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              "Error: ${snapshot.error}",
+      return Card(
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  AnimatedRoute(
+                    context: context,
+                    page: ProfilePage(
+                      user: user,
+                    ),
+                  ).createRoute(),
+                );
+              },
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: CachedNetworkImageProvider(
+                    user.profilePicture,
+                  ),
+                ),
+                title: Text(user.name),
+                subtitle: Text("@${user.username}"),
+              ),
             ),
-          );
-        }
-
-        final user = MyUser.fromSnapshot(snapshot.data!);
-        return Card(
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    AnimatedRoute(
-                      context: context,
-                      page: ProfilePage(
-                        user: user,
-                      ),
-                    ).createRoute(),
-                  );
-                },
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: CachedNetworkImageProvider(
-                      user.profilePicture,
+            GestureDetector(
+              onTap: () async {
+                await providedUser.getPostByUid(post.postUid);
+                Navigator.push(
+                  context,
+                  AnimatedRoute(
+                    context: context,
+                    page: OnePostPage(post: post.postUid),
+                  ).createRoute(),
+                );
+              },
+              child: CachedNetworkImage(
+                imageUrl: post.img,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  AnimatedRoute(
+                    context: context,
+                    page: OnePostPage(post: post.postUid),
+                  ).createRoute(),
+                );
+              },
+              child: ListTile(
+                title: Text(
+                  post.title,
+                  style: const TextStyle(
+                    fontFamily: "BN",
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.caption.length >= 20
+                          ? post.caption.substring(0, 20)
+                          : post.caption,
                     ),
-                  ),
-                  title: Text(user.name),
-                  subtitle: Text("@${user.username}"),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    AnimatedRoute(
-                      context: context,
-                      page: OnePostPage(post: post),
-                    ).createRoute(),
-                  );
-                },
-                child: CachedNetworkImage(
-                  imageUrl: post.img,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    AnimatedRoute(
-                      context: context,
-                      page: OnePostPage(post: post),
-                    ).createRoute(),
-                  );
-                },
-                child: ListTile(
-                  title: Text(
-                    post.title,
-                    style: const TextStyle(
-                      fontFamily: "BN",
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.caption.length >= 20
-                            ? post.caption.substring(0, 20)
-                            : post.caption,
+                    Text(
+                      "Read more...",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                      Text(
-                        "Read more...",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      )
-                    ],
-                  ),
+                    )
+                  ],
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

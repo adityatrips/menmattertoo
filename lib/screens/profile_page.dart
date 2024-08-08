@@ -198,7 +198,7 @@ class ProfilePageState extends State<ProfilePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OnePostPage(post: post),
+            builder: (context) => OnePostPage(post: post.postUid),
           ),
         );
       },

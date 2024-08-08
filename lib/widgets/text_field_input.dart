@@ -10,6 +10,7 @@ class TextFieldInput extends StatefulWidget {
   final bool multiline;
   final int? maxLength;
   final String? Function(String?)? validator;
+  final Function()? toggleViewPassword;
 
   const TextFieldInput({
     super.key,
@@ -22,6 +23,7 @@ class TextFieldInput extends StatefulWidget {
     this.multiline = false,
     this.maxLength,
     this.validator,
+    this.toggleViewPassword,
   });
 
   @override
@@ -42,6 +44,21 @@ class TextFieldInputState extends State<TextFieldInput> {
       textCapitalization: widget.autoCapitalize,
       obscureText: widget.isPassword,
       decoration: InputDecoration(
+        suffixIcon: widget.toggleViewPassword != null
+            ? GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (widget.toggleViewPassword != null) {
+                      widget.toggleViewPassword!();
+                    }
+                  });
+                },
+                child: Icon(
+                  widget.isPassword ? Icons.visibility : Icons.visibility_off,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              )
+            : null,
         hintText: widget.hintText,
         border: OutlineInputBorder(
           borderSide: BorderSide.none,

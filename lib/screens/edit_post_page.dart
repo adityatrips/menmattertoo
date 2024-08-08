@@ -1,32 +1,49 @@
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:men_matter_too/providers/user_provider.dart';
 import 'package:men_matter_too/utils/create_animated_route.dart';
 import 'package:men_matter_too/utils/loading_indicator.dart';
 import 'package:men_matter_too/utils/pick_image.dart';
-import 'package:men_matter_too/utils/show_snackbar.dart';
 import 'package:men_matter_too/widgets/app_bar.dart';
 import 'package:men_matter_too/widgets/custom_button.dart';
 import 'package:men_matter_too/widgets/text_field_input.dart';
 import 'package:provider/provider.dart';
 
-class AddPostPage extends StatefulWidget {
-  const AddPostPage({super.key});
+class EditPostPage extends StatefulWidget {
+  final String uid;
+  final String title;
+  final String caption;
+  final String file;
+
+  const EditPostPage({
+    super.key,
+    required this.uid,
+    required this.title,
+    required this.caption,
+    required this.file,
+  });
 
   @override
-  AddPostPageState createState() => AddPostPageState();
+  EditPostPageState createState() => EditPostPageState();
 }
 
-class AddPostPageState extends State<AddPostPage> {
-  final title = TextEditingController();
-  final caption = TextEditingController();
+class EditPostPageState extends State<EditPostPage> {
+  final _title = TextEditingController();
+  final _caption = TextEditingController();
+  Uint8List? _file;
 
-  Uint8List? file;
+  @override
+  void initState() {
+    _title.text = widget.title;
+    _caption.text = widget.caption;
+    super.initState();
+  }
 
   void setFile(Uint8List? file) {
     setState(() {
-      this.file = file;
+      _file = file;
     });
   }
 
@@ -55,7 +72,11 @@ class AddPostPageState extends State<AddPostPage> {
 
   List<Widget> buildAddPost(BuildContext context, UserProvider user) {
     return [
-      if (file == null)
+      if (widget.file.isNotEmpty)
+        CachedNetworkImage(
+          imageUrl: widget.file,
+        )
+      else if (_file == null || widget.file.isEmpty)
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.tertiary,
@@ -78,7 +99,7 @@ class AddPostPageState extends State<AddPostPage> {
           ),
         )
       else
-        Image.memory(file!),
+        Image.memory(_file!),
       const SizedBox(height: 10),
       CustomButton(
         buttonText: "Add a picture",
@@ -95,10 +116,10 @@ class AddPostPageState extends State<AddPostPage> {
         },
       ),
       const SizedBox(height: 10),
-      TextFieldInput(controller: title, hintText: "Title"),
+      TextFieldInput(controller: _title, hintText: "Title"),
       const SizedBox(height: 10),
       TextFieldInput(
-        controller: caption,
+        controller: _caption,
         hintText: 'Caption',
         textInputType: TextInputType.multiline,
         maxLength: 1000,
@@ -107,7 +128,7 @@ class AddPostPageState extends State<AddPostPage> {
       ),
       const SizedBox(height: 10),
       CustomButton(
-        buttonText: "Add post",
+        buttonText: "Edit post",
         onTap: () async {
           showDialog(
             context: context,
@@ -115,24 +136,17 @@ class AddPostPageState extends State<AddPostPage> {
               return const LoadingIndicator();
             },
           );
-          if (title.text.isEmpty || caption.text.isEmpty || file == null) {
-            Navigator.pop(context);
-            showSnackbar(
-              "Please fill in all fields.",
-              type: TypeOfSnackbar.error,
-            );
-            return;
-          } else {
-            await user.uploadAndAddPost(
-              title: title.text,
-              caption: caption.text,
-              file: file!,
-            );
-          }
+          await user.editPost(
+            uid: widget.uid,
+            title: _title.text,
+            caption: _caption.text,
+            file: _file,
+            url: widget.file,
+          );
           Navigator.pop(context);
           Navigator.pop(context);
-          title.clear();
-          caption.clear();
+          _title.clear();
+          _caption.clear();
         },
       ),
     ];

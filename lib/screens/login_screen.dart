@@ -20,6 +20,8 @@ class LoignScreenState extends State<LoginScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+  bool isPassword = true;
+
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -67,7 +69,10 @@ class LoignScreenState extends State<LoginScreen> {
                         TextFieldInput(
                           controller: passwordController,
                           hintText: "Enter your password",
-                          isPassword: true,
+                          isPassword: isPassword,
+                          toggleViewPassword: () => setState(() {
+                            isPassword = !isPassword;
+                          }),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please enter a password";
